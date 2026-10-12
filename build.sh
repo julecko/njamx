@@ -12,9 +12,10 @@ die() {
 
 usage() {
     echo
-    echo "Usage: $0 [-d] [-r [args]]"
+    echo "Usage: $0 [-d] [--release] [-r [args]]"
     echo
-    echo "  -d           Build in Debug mode (default is Release)"
+    echo "  -d           Build in Debug mode (default)"
+    echo "  --release    Build in Release mode"
     echo "  -r [args]    Run the executable after build with optional arguments"
     echo "  -c           Run Cppcheck only"
     echo
@@ -47,7 +48,7 @@ run_cppcheck() {
 }
 
 # Defaults
-BUILD_TYPE="Release"
+BUILD_TYPE="Debug"
 RUN_EXEC=0
 EXEC_NAME="njamx"
 RUN_ARGS=()
@@ -57,6 +58,10 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         -d)
             BUILD_TYPE="Debug"
+            shift
+            ;;
+        --release)
+            BUILD_TYPE="Release"
             shift
             ;;
         -r)
