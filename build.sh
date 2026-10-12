@@ -108,5 +108,13 @@ if [[ $RUN_EXEC -eq 1 ]]; then
 
     echo
     echo "Running $EXEC ${RUN_ARGS[*]}"
+    set +e
+    trap - ERR
     "$EXEC" "${RUN_ARGS[@]}"
+    EXEC_EXIT=$?
+    trap 'die "Command failed at line $LINENO"' ERR
+    set -e
+
+    echo
+    echo "Executable exited with code $EXEC_EXIT"
 fi

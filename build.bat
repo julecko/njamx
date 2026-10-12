@@ -86,6 +86,9 @@ if "%RUN_EXEC%"=="1" (
     echo.
     echo Running "%BUILD_DIR%\%BUILD_TYPE%\%EXEC_NAME%.exe" %RUN_ARGS%
     "%BUILD_DIR%\%BUILD_TYPE%\%EXEC_NAME%.exe" %RUN_ARGS%
+    set "EXEC_EXIT=%ERRORLEVEL%"
+    echo.
+    echo Executable exited with code %EXEC_EXIT%
 )
 
 endlocal
