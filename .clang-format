@@ -19,10 +19,12 @@ SpacesInParentheses: false
 SpaceAfterCStyleCast: false
 AlignAfterOpenBracket: Align
 AlignTrailingComments: true
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
 
-SortIncludes: CaseSensitive
+SortIncludes:
+  Enabled: true
+  IgnoreCase: false
 IncludeBlocks: Regroup
 IncludeCategories:
   - Regex: '^<[a-z_]+\.h>'
@@ -36,7 +38,7 @@ IncludeCategories:
     SortPriority: 3
 
 BinPackArguments: true
-BinPackParameters: true
+BinPackParameters: BinPack
 AllowAllParametersOfDeclarationOnNextLine: true
 
 MaxEmptyLinesToKeep: 1
