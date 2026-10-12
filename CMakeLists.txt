@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # When stable set project version to 1.0.0
-project(project_name VERSION 0.0.0 LANGUAGES C CXX)
+project(njamx VERSION 0.0.0 LANGUAGES C CXX)
 
 if (CMAKE_C_COMPILER)
     set(CMAKE_C_STANDARD 11)
@@ -48,29 +48,29 @@ endif()
 
 # Default exec name
 if(EXECUTABLE_OUTPUT_NAME)
-    set(EXECUTABLE_OUTPUT_NAME "projectname")
+    set(EXECUTABLE_OUTPUT_NAME "njamx")
 endif()
 
-add_executable(project_name ${SOURCES})
+add_executable(njamx ${SOURCES})
 
-set_target_properties(project_name PROPERTIES OUTPUT_NAME ${EXECUTABLE_OUTPUT_NAME})
+set_target_properties(njamx PROPERTIES OUTPUT_NAME ${EXECUTABLE_OUTPUT_NAME})
 
 if(WIN32)
-    #set_target_properties(project_name PROPERTIES WIN32_EXECUTABLE TRUE)
+    #set_target_properties(njamx PROPERTIES WIN32_EXECUTABLE TRUE)
 endif()
 
 if(WIN32)
-    #target_link_libraries(project_name PRIVATE unofficial-sodium::sodium)
+    #target_link_libraries(njamx PRIVATE unofficial-sodium::sodium)
 else()
-    #target_include_directories(project_name PRIVATE ${SODIUM_INCLUDE_DIRS})
-    #target_link_libraries(project_name PRIVATE ${SODIUM_LIBRARIES})
+    #target_include_directories(njamx PRIVATE ${SODIUM_INCLUDE_DIRS})
+    #target_link_libraries(njamx PRIVATE ${SODIUM_LIBRARIES})
 endif()
 
-target_include_directories(project_name PRIVATE
+target_include_directories(njamx PRIVATE
     ${PROJECT_SOURCE_DIR}/include
 )
 
-target_compile_definitions(project_name PRIVATE
+target_compile_definitions(njamx PRIVATE
     PROJECT_VERSION=\"${PROJECT_VERSION}\"
 )
 
@@ -81,47 +81,47 @@ target_compile_definitions(project_name PRIVATE
 if (MSVC)
 
     # Debug
-    target_compile_options(project_name PRIVATE
+    target_compile_options(njamx PRIVATE
         $<$<CONFIG:Debug>:/Zi /Od>
     )
-    target_link_options(project_name PRIVATE
+    target_link_options(njamx PRIVATE
         $<$<CONFIG:Debug>:/DEBUG>
     )
-    target_compile_definitions(project_name PRIVATE
+    target_compile_definitions(njamx PRIVATE
         $<$<CONFIG:Debug>:DEBUG_MODE=1>
     )
 
     # Release
-    target_compile_options(project_name PRIVATE
+    target_compile_options(njamx PRIVATE
         $<$<CONFIG:Release>:/O2>
     )
-    target_compile_definitions(project_name PRIVATE
+    target_compile_definitions(njamx PRIVATE
         $<$<CONFIG:Release>:NDEBUG>
     )
 
 else() # GCC / Clang
 
     # Debug
-    target_compile_options(project_name PRIVATE
+    target_compile_options(njamx PRIVATE
         $<$<CONFIG:Debug>:-g -O0 -fno-omit-frame-pointer>
     )
-    target_compile_definitions(project_name PRIVATE
+    target_compile_definitions(njamx PRIVATE
         $<$<CONFIG:Debug>:DEBUG_MODE=1>
     )
 
     # Optional ASAN (ONLY here)
-    target_compile_options(project_name PRIVATE
+    target_compile_options(njamx PRIVATE
         $<$<CONFIG:Debug>:-fsanitize=address>
     )
-    target_link_options(project_name PRIVATE
+    target_link_options(njamx PRIVATE
         $<$<CONFIG:Debug>:-fsanitize=address>
     )
 
     # Release
-    target_compile_options(project_name PRIVATE
+    target_compile_options(njamx PRIVATE
         $<$<CONFIG:Release>:-O3>
     )
-    target_compile_definitions(project_name PRIVATE
+    target_compile_definitions(njamx PRIVATE
         $<$<CONFIG:Release>:NDEBUG>
     )
 

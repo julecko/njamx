@@ -23,7 +23,7 @@ usage() {
 run_cppcheck() {
     echo
     echo "Running Cppcheck..."
-    
+
     CPPCHECK_CMD=$(command -v cppcheck || true)
     if [[ -z "$CPPCHECK_CMD" ]]; then
         die "Cppcheck not found"
@@ -49,7 +49,7 @@ run_cppcheck() {
 # Defaults
 BUILD_TYPE="Release"
 RUN_EXEC=0
-EXEC_NAME="project-name"
+EXEC_NAME="njamx"
 RUN_ARGS=()
 
 # Argument parsing
