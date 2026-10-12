@@ -1,8 +1,8 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-#ifndef PROJECT_VERSION
-#define PROJECT_VERSION "Unknown"
+#ifndef NJAMX_VERSION
+#define NJAMX_VERSION "Unknown"
 #endif
 
 #endif

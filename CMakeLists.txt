@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.10)
 # When stable set project version to 1.0.0
 project(njamx VERSION 0.0.0 LANGUAGES C CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 if (CMAKE_C_COMPILER)
     set(CMAKE_C_STANDARD 11)
     set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -71,7 +73,7 @@ target_include_directories(njamx PRIVATE
 )
 
 target_compile_definitions(njamx PRIVATE
-    PROJECT_VERSION=\"${PROJECT_VERSION}\"
+    NJAMX_VERSION=\"${PROJECT_VERSION}\"
 )
 
 # ==============================
