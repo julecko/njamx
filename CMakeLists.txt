@@ -37,7 +37,7 @@ set(SOURCES)
 if (CMAKE_C_COMPILER)
     list(APPEND SOURCES
         src/main.c
-        # add other C files here
+        src/cli_args.c
     )
 endif()
 
