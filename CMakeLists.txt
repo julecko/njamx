@@ -68,10 +68,6 @@ else()
     #target_link_libraries(njamx PRIVATE ${SODIUM_LIBRARIES})
 endif()
 
-target_include_directories(njamx PRIVATE
-    ${PROJECT_SOURCE_DIR}/include
-)
-
 target_compile_definitions(njamx PRIVATE
     NJAMX_VERSION=\"${PROJECT_VERSION}\"
 )
