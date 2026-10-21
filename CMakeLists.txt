@@ -38,6 +38,7 @@ if (CMAKE_C_COMPILER)
     list(APPEND SOURCES
         src/main.c
         src/cli_args.c
+        src/network/device.c
     )
 endif()
 
@@ -67,6 +68,10 @@ else()
     #target_include_directories(njamx PRIVATE ${SODIUM_INCLUDE_DIRS})
     #target_link_libraries(njamx PRIVATE ${SODIUM_LIBRARIES})
 endif()
+
+target_include_directories(njamx PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
+)
 
 target_compile_definitions(njamx PRIVATE
     NJAMX_VERSION=\"${PROJECT_VERSION}\"
