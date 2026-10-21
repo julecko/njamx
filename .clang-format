@@ -27,15 +27,18 @@ SortIncludes:
   IgnoreCase: false
 IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex: '^<[a-z_]+\.h>'
+  # C standard library
+  - Regex: '^<(assert|complex|ctype|errno|fenv|float|inttypes|iso646|limits|locale|math|setjmp|signal|stdalign|stdarg|stdatomic|stdbool|stddef|stdint|stdio|stdlib|stdnoreturn|string|tgmath|threads|time|uchar|wchar|wctype)\.h>$'
     Priority: 1
-    SortPriority: 1
-  - Regex: '^<.*>'
+  # POSIX / system headers
+  - Regex: '^<(sys/|netinet/|arpa/|(unistd|fcntl|pthread|poll|netdb|dirent)\.h)'
     Priority: 2
-    SortPriority: 2
-  - Regex: '^".*"'
+  # everything else in <...> (third-party)
+  - Regex: '^<.*>'
     Priority: 3
-    SortPriority: 3
+  # project headers
+  - Regex: '^".*"'
+    Priority: 4
 
 BinPackArguments: true
 BinPackParameters: BinPack
