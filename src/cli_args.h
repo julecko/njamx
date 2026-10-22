@@ -12,6 +12,7 @@ typedef enum cli_args_result {
 typedef struct cli_args {
     cli_args_result result;
     const char *interface;
+    const char *ip;
 } cli_args;
 
 cli_args cli_args_parse(int argc, char *argv[]);

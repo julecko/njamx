@@ -39,6 +39,7 @@ if (CMAKE_C_COMPILER)
         src/main.c
         src/cli_args.c
         src/network/device.c
+        src/network/network.c
     )
 endif()
 

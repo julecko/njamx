@@ -1,13 +1,15 @@
 #include "cli_args.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
 void cli_args_print_usage(const char *prog_name, FILE *stream) {
-    fprintf(stream, "Usage: %s -i <interface>\n", prog_name);
+    fprintf(stream, "Usage: %s <ip> -i <interface>\n", prog_name);
     fprintf(stream, "\n");
     fprintf(stream, "  -i, --interface <name>   Network interface to use (required)\n");
     fprintf(stream, "  -h, --help               Show this help message\n");
+    fprintf(stream, "Examples: %s 10.10.10.1/23 -i eth0\n", prog_name);
 }
 
 #ifdef DEBUG_MODE
@@ -19,6 +21,7 @@ void cli_args_print_debug(cli_args args) {
     };
 
     fprintf(stderr, "[debug] result = %s\n", result_names[args.result]);
+    fprintf(stderr, "[debug] ip = %s\n", args.ip ? args.ip : "(null)");
     fprintf(stderr, "[debug] interface = %s\n", args.interface ? args.interface : "(null)");
 }
 #endif
@@ -33,15 +36,21 @@ cli_args cli_args_parse(int argc, char *argv[]) {
         if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
             args.result = CLI_ARGS_HELP;
             return args;
-        }
-
-        if (strcmp(arg, "-i") == 0 || strcmp(arg, "--interface") == 0) {
+        } else if (strcmp(arg, "-i") == 0 || strcmp(arg, "--interface") == 0) {
             if (i + 1 >= argc) {
                 fprintf(stderr, "Error: %s needs a value\n", arg);
                 return args;
             }
             args.interface = argv[++i];
             continue;
+        } else {
+            if (args.ip == NULL) {
+                args.ip = arg;
+                continue;
+            } else {
+                fprintf(stderr, "Error: Ip already provided\n");
+                return args;
+            }
         }
 
         fprintf(stderr, "Error: unknown argument '%s'\n", arg);
@@ -50,6 +59,9 @@ cli_args cli_args_parse(int argc, char *argv[]) {
 
     if (args.interface == NULL) {
         fprintf(stderr, "Error: missing required -i/--interface option\n");
+        return args;
+    } else if (args.ip == NULL) {
+        fprintf(stderr, "Error: missing required IP address");
         return args;
     }
 

@@ -12,7 +12,7 @@ device_t device_create(uint32_t ip) {
 };
 
 #ifdef DEBUG_MODE
-const char *device_state_to_str(device_state_t state) {
+static const char *device_state_to_str(device_state_t state) {
     switch (state) {
         case DEVICE_STATE_DEAD:
             return "dead";
@@ -24,7 +24,7 @@ const char *device_state_to_str(device_state_t state) {
     return "unknown";
 }
 
-const char *device_role_to_str(device_role_t role) {
+static const char *device_role_to_str(device_role_t role) {
     switch (role) {
         case DEVICE_ROLE_CLIENT:
             return "client";

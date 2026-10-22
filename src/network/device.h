@@ -29,6 +29,7 @@ typedef struct device {
  */
 device_t device_create(uint32_t ip);
 
+#ifdef DEBUG_MODE
 /**
  * @brief Print device (available only in debug)
  *
@@ -36,5 +37,6 @@ device_t device_create(uint32_t ip);
  * @return Nothing
  */
 void device_print(device_t *device);
+#endif
 
 #endif

@@ -7,6 +7,7 @@
 
 #include "cli_args.h"
 #include "network/device.h"
+#include "network/network.h"
 #include "version.h"
 
 int main(int argc, char *argv[]) {
@@ -27,17 +28,19 @@ int main(int argc, char *argv[]) {
             break;
     }
 
-    const char *ip = "132.10.122.5";
-    struct in_addr addr;
-    if (inet_pton(AF_INET, ip, &addr) != 1) {
-        fprintf(stderr, "Error happened in converting ip");
+    network_t network = network_create(args.ip);
+    if (!network.devices || network.length == 0) {
+        fprintf(stderr, "Network initialization went wrong\n");
         return 1;
     }
-    device_t device = device_create(ntohl(addr.s_addr));
 
+    for (size_t i = 0; i < network.length; i++) {
+        device_t device = network.devices[i];
 #ifdef DEBUG_MODE
-    device_print(&device);
+        device_print(&device);
 #endif
+    }
 
+    network_delete(&network);
     return 0;
 }
