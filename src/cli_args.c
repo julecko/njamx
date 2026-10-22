@@ -47,9 +47,6 @@ cli_args cli_args_parse(int argc, char *argv[]) {
             if (args.ip == NULL) {
                 args.ip = arg;
                 continue;
-            } else {
-                fprintf(stderr, "Error: Ip already provided\n");
-                return args;
             }
         }
 
@@ -61,7 +58,7 @@ cli_args cli_args_parse(int argc, char *argv[]) {
         fprintf(stderr, "Error: missing required -i/--interface option\n");
         return args;
     } else if (args.ip == NULL) {
-        fprintf(stderr, "Error: missing required IP address");
+        fprintf(stderr, "Error: missing required IP address\n");
         return args;
     }
 

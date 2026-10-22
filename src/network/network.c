@@ -45,6 +45,7 @@ network_t network_create(const char *ip_with_mask) {
 
     if (prefix > 30) {
         fprintf(stderr, "Subnet too small\n");
+        return network;
     }
 
     uint32_t ip_host = ntohl(addr.s_addr);
