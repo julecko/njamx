@@ -67,7 +67,7 @@ network_t network_create(const char *ip_with_mask) {
     }
 
     for (uint64_t n = ip_network + 1, i = 0; n < ip_broadcast; n++, i++) {
-        network.devices[i] = device_create(n);
+        network.devices[i] = network_device_create(n);
     }
     printf("Network len: %" PRIu64 "\n", network_len);
     return network;
@@ -79,12 +79,4 @@ void network_delete(network_t *network) {
         network->devices = NULL;
     }
     network->length = 0;
-}
-
-extern inline uint32_t network_get_network_ip(network_t *network) {
-    return network->my_ip & network->mask;
-}
-
-extern inline uint32_t network_get_broadcast_ip(network_t *network) {
-    return network->my_ip | ~network->mask;
 }

@@ -27,7 +27,7 @@ typedef struct device {
  * @param ip  IPv4 address of the device, in host byte order.
  * @return The initialized device, returned by value.
  */
-device_t device_create(uint32_t ip);
+device_t network_device_create(uint32_t ip);
 
 #ifdef DEBUG_MODE
 /**
@@ -36,7 +36,7 @@ device_t device_create(uint32_t ip);
  * @param device Pointer to device struct to be printed
  * @return Nothing
  */
-void device_print(device_t *device);
+void network_device_print(device_t *device);
 #endif
 
 #endif

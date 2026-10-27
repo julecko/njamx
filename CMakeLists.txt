@@ -40,6 +40,8 @@ if (CMAKE_C_COMPILER)
         src/cli_args.c
         src/network/device.c
         src/network/network.c
+        src/network/socket.c
+        src/network/arp.c
     )
 endif()
 

@@ -22,6 +22,12 @@ typedef struct network {
 network_t network_create(const char *ip_with_mask);
 
 void network_delete(network_t *network);
-inline uint32_t network_get_network_ip(network_t *network);
-inline uint32_t network_get_broadcast_ip(network_t *network);
+
+static inline uint32_t network_get_network_ip(network_t *network) {
+    return network->my_ip & network->mask;
+}
+
+static inline uint32_t network_get_broadcast_ip(network_t *network) {
+    return network->my_ip | ~network->mask;
+}
 #endif

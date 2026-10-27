@@ -7,7 +7,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-device_t device_create(uint32_t ip) {
+device_t network_device_create(uint32_t ip) {
     return (device_t){.ip = ip, .role = DEVICE_ROLE_CLIENT, .state = DEVICE_STATE_DEAD};
 };
 
@@ -34,7 +34,7 @@ static const char *device_role_to_str(device_role_t role) {
     return "unknown";
 }
 
-void device_print(device_t *device) {
+void network_device_print(device_t *device) {
     struct in_addr addr = {.s_addr = htonl(device->ip)};
     char ip[INET_ADDRSTRLEN];
 
