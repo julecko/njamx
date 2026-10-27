@@ -10,6 +10,6 @@
  * @param mac    Out: 6-byte MAC address, filled in on success.
  * @return 0 on success, -1 on error.
  */
-int iface_get_mac(const char *ifname, uint8_t mac[6]);
+int network_iface_get_mac(const char *ifname, uint8_t mac[6]);
 
 #endif

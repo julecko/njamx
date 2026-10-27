@@ -14,7 +14,8 @@
 
 #include "network/network.h"
 
-int network_socket_open(network_socket_t *s, const char *ifname, uint16_t ethertype, int timeout_sec) {
+int network_socket_open(network_socket_t *s, const char *ifname, uint16_t ethertype,
+                        int timeout_sec) {
     s->ifindex = if_nametoindex(ifname);
     if (s->ifindex == 0) {
         perror("if_nametoindex");

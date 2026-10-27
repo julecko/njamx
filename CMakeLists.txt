@@ -45,6 +45,7 @@ if (CMAKE_C_COMPILER)
         src/network/scanner.c
         src/network/iface.c
         src/network/forgery.c
+        src/tools/mac_change.c
     )
 endif()
 

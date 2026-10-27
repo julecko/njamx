@@ -13,7 +13,7 @@ void cli_args_print_usage(const char *prog_name, FILE *stream) {
 }
 
 #ifdef DEBUG_MODE
-void cli_args_print_debug(cli_args args) {
+void cli_args_print_debug(cli_args_t args) {
     static const char *result_names[] = {
         [CLI_ARGS_SUCCESS] = "CLI_ARGS_SUCCESS",
         [CLI_ARGS_ERROR] = "CLI_ARGS_ERROR",
@@ -26,8 +26,8 @@ void cli_args_print_debug(cli_args args) {
 }
 #endif
 
-cli_args cli_args_parse(int argc, char *argv[]) {
-    cli_args args = {0};
+cli_args_t cli_args_parse(int argc, char *argv[]) {
+    cli_args_t args = {0};
     args.result = CLI_ARGS_ERROR;
 
     for (int i = 1; i < argc; i++) {
@@ -42,6 +42,9 @@ cli_args cli_args_parse(int argc, char *argv[]) {
                 return args;
             }
             args.interface = argv[++i];
+            continue;
+        } else if (strcmp(arg, "-m") == 0 || strcmp(arg, "--mac-change") == 0) {
+            args.flags |= CLI_ARGS_FLAGS_CHANGE_MAC;
             continue;
         } else {
             if (args.ip == NULL) {

@@ -3,12 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <net/if.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-int iface_get_mac(const char *ifname, uint8_t mac[6]) {
+#include <net/if.h>
+
+int network_iface_get_mac(const char *ifname, uint8_t mac[6]) {
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd < 0) {
         perror("socket");
