@@ -44,6 +44,7 @@ if (CMAKE_C_COMPILER)
         src/network/arp.c
         src/network/scanner.c
         src/network/iface.c
+        src/network/forgery.c
     )
 endif()
 

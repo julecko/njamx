@@ -18,7 +18,6 @@ int scanner_scan(network_t *network, const network_socket_t *sock, const uint8_t
             fprintf(stderr, "Failed to send ARP request for device %zu\n", i);
             continue;
         }
-        device->state = DEVICE_STATE_ADDED;
         sent++;
     }
 

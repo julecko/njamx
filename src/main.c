@@ -1,10 +1,13 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <unistd.h>
+
 #include <linux/if_ether.h>
 
 #include "cli_args.h"
 #include "network/device.h"
+#include "network/forgery.h"
 #include "network/iface.h"
 #include "network/network.h"
 #include "network/scanner.h"
@@ -41,8 +44,12 @@ int main(int argc, char *argv[]) {
         network_device_print(&device);
 #endif
     }
-
-    uint8_t my_mac[6];
+    for (int i = 0; i < 10; i++) {
+        sleep(1);
+        device_t device = network_forgery_device(&network);
+        network_device_print(&device);
+    }
+    /*uint8_t my_mac[6];
     if (iface_get_mac(args.interface, my_mac) < 0) {
         fprintf(stderr, "Failed to get MAC address of %s\n", args.interface);
         network_delete(&network);
@@ -58,7 +65,7 @@ int main(int argc, char *argv[]) {
     int found = scanner_scan(&network, &sock, my_mac);
     printf("Found %d device(s) alive out of %zu\n", found < 0 ? 0 : found, network.length);
 
-    network_socket_close(&sock);
+    network_socket_close(&sock);*/
 
     network_delete(&network);
     return 0;
