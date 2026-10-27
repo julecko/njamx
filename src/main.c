@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <unistd.h>
 
@@ -33,6 +35,8 @@ int main(int argc, char *argv[]) {
         case CLI_ARGS_SUCCESS:
             break;
     }
+
+    srand((unsigned int)time(NULL));
 
     uint8_t my_mac[6];
     if (network_iface_get_mac(args.interface, my_mac) < 0) {
