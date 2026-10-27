@@ -42,6 +42,8 @@ if (CMAKE_C_COMPILER)
         src/network/network.c
         src/network/socket.c
         src/network/arp.c
+        src/network/scanner.c
+        src/network/iface.c
     )
 endif()
 

@@ -72,3 +72,20 @@ int arp_wait_reply(const network_socket_t *s, uint32_t target_ip, uint8_t reply_
         return 0;
     }
 }
+
+int arp_recv_reply(const network_socket_t *s, uint32_t *sender_ip, uint8_t sender_mac[6]) {
+    struct arp_frame f;
+    for (;;) {
+        ssize_t n = network_socket_recv(s, &f, sizeof(f));
+        if (n < (ssize_t)sizeof(f))
+            return -1;
+        if (ntohs(f.arp.ea_hdr.ar_op) != ARPOP_REPLY)
+            continue;
+
+        uint32_t raw_ip;
+        memcpy(&raw_ip, f.arp.arp_spa, 4);
+        *sender_ip = ntohl(raw_ip);
+        memcpy(sender_mac, f.arp.arp_sha, 6);
+        return 0;
+    }
+}

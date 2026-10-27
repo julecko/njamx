@@ -19,4 +19,14 @@ int arp_send_reply(const network_socket_t *s, const uint8_t dst_mac[6], const ui
 
 int arp_wait_reply(const network_socket_t *s, uint32_t target_ip, uint8_t reply_mac[6]);
 
+// Receive the next ARP reply, whoever it is from (unlike arp_wait_reply,
+// this does not filter by target IP, so no replies are discarded while
+// probing many hosts at once). Blocks subject to the socket's receive
+// timeout.
+//
+// sender_ip  - Out: replying host's IP, in host byte order.
+// sender_mac - Out: replying host's MAC address.
+// @return 0 on success, -1 on timeout/error.
+int arp_recv_reply(const network_socket_t *s, uint32_t *sender_ip, uint8_t sender_mac[6]);
+
 #endif

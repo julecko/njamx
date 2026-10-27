@@ -1,16 +1,13 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-
 #include <linux/if_ether.h>
 
 #include "cli_args.h"
-#include "network/arp.h"
 #include "network/device.h"
+#include "network/iface.h"
 #include "network/network.h"
+#include "network/scanner.h"
 #include "network/socket.h"
 #include "version.h"
 
@@ -45,17 +42,21 @@ int main(int argc, char *argv[]) {
 #endif
     }
 
-    network_socket_t sock;
-    if (network_socket_open(&sock, "wlan0", ETH_P_ARP, 1) < 0)
+    uint8_t my_mac[6];
+    if (iface_get_mac(args.interface, my_mac) < 0) {
+        fprintf(stderr, "Failed to get MAC address of %s\n", args.interface);
+        network_delete(&network);
         return 1;
+    }
 
-    uint8_t my_mac[6] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x01};
-    uint8_t requester[6] = {0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}; // who asked
-    uint32_t my_ip = inet_addr("192.168.1.50");
-    uint32_t requester_ip = inet_addr("192.168.1.10");
+    network_socket_t sock;
+    if (network_socket_open(&sock, args.interface, ETH_P_ARP, 1) < 0) {
+        network_delete(&network);
+        return 1;
+    }
 
-    if (arp_send_reply(&sock, requester, my_mac, my_ip, requester, requester_ip) < 0)
-        fprintf(stderr, "arp_send_reply failed\n");
+    int found = scanner_scan(&network, &sock, my_mac);
+    printf("Found %d device(s) alive out of %zu\n", found < 0 ? 0 : found, network.length);
 
     network_socket_close(&sock);
 
