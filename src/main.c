@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    int found = scanner_scan(&network, &sock, program_mac);
+    int found = scanner_scan(&network, &sock, program_mac, args.timeout_sec);
     printf("Found %d device(s) alive out of %zu\n", found < 0 ? 0 : found, network.length);
 
     network_socket_close(&sock);

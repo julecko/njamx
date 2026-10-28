@@ -39,10 +39,17 @@ int network_socket_open(network_socket_t *s, const char *ifname, uint16_t ethert
         return -1;
     }
 
-    struct timeval tv = {.tv_sec = timeout_sec};
+    if (network_socket_set_timeout(s, timeout_sec, 0) < 0) {
+        close(s->fd);
+        return -1;
+    }
+    return 0;
+}
+
+int network_socket_set_timeout(const network_socket_t *s, long sec, long usec) {
+    struct timeval tv = {.tv_sec = sec, .tv_usec = usec};
     if (setsockopt(s->fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
         perror("setsockopt");
-        close(s->fd);
         return -1;
     }
     return 0;

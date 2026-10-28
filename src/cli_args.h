@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 
+#define CLI_ARGS_DEFAULT_TIMEOUT_SEC 3
+
 typedef enum cli_args_result {
     CLI_ARGS_SUCCESS,
     CLI_ARGS_ERROR,
@@ -18,6 +20,7 @@ typedef struct cli_args {
     const char *interface;
     const char *ip;
     cli_flags_t flags;
+    int timeout_sec;
 } cli_args_t;
 
 cli_args_t cli_args_parse(int argc, char *argv[]);

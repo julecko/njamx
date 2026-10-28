@@ -15,6 +15,7 @@ typedef struct network_socket {
 
 int network_socket_open(network_socket_t *s, const char *ifname, uint16_t ethertype,
                         int timeout_sec);
+int network_socket_set_timeout(const network_socket_t *s, long sec, long usec);
 ssize_t network_socket_send(const network_socket_t *s, const uint8_t dst_mac[6], const void *frame,
                             size_t len);
 ssize_t network_socket_recv(const network_socket_t *s, void *buf, size_t len);
