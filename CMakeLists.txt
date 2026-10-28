@@ -30,6 +30,7 @@ else()
     #find_package(FLTK REQUIRED)
     #find_package(PkgConfig REQUIRED)
     #pkg_check_modules(SODIUM REQUIRED libsodium)
+    find_package(Threads REQUIRED)
 endif()
 
 set(SOURCES)
@@ -45,6 +46,7 @@ if (CMAKE_C_COMPILER)
         src/network/scanner.c
         src/network/iface.c
         src/network/forgery.c
+        src/process/cli.c
         src/tools/mac_change.c
     )
 endif()
@@ -74,6 +76,7 @@ if(WIN32)
 else()
     #target_include_directories(njamx PRIVATE ${SODIUM_INCLUDE_DIRS})
     #target_link_libraries(njamx PRIVATE ${SODIUM_LIBRARIES})
+    target_link_libraries(njamx PRIVATE Threads::Threads)
 endif()
 
 target_include_directories(njamx PRIVATE

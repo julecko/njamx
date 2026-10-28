@@ -13,6 +13,6 @@ typedef struct jammer_args {
     network_socket_t network_socket;
 } jammer_args_t;
 
-void *jam_jammed_devices(void *arg);
+void *jammer_process(void *arg);
 
 #endif

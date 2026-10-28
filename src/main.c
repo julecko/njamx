@@ -15,6 +15,7 @@
 #include "network/network.h"
 #include "network/scanner.h"
 #include "network/socket.h"
+#include "process/cli.h"
 #include "tools/mac_change.h"
 #include "version.h"
 
@@ -73,6 +74,8 @@ int main(int argc, char *argv[]) {
 
     int found = scanner_scan(&network, &sock, program_mac, args.timeout_sec);
     printf("Found %d device(s) alive out of %zu\n", found < 0 ? 0 : found, network.length);
+
+    cli_run(&network);
 
     network_socket_close(&sock);
     network_delete(&network);

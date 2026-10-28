@@ -1,5 +1,6 @@
 #include "network/device.h"
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -8,7 +9,11 @@
 #include <sys/socket.h>
 
 device_t network_device_create(uint32_t ip) {
-    return (device_t){.ip = ip, .mac = {0}, .role = DEVICE_ROLE_CLIENT, .state = DEVICE_STATE_DEAD};
+    return (device_t){.ip = ip,
+                      .mac = {0},
+                      .role = DEVICE_ROLE_CLIENT,
+                      .state = DEVICE_STATE_DEAD,
+                      .jamming = false};
 };
 
 #ifdef DEBUG_MODE

@@ -12,7 +12,7 @@
 #include "network/device.h"
 #include "network/forgery.h"
 
-void *jam_jammed_devices(void *arg) {
+void *jammer_process(void *arg) {
     jammer_args_t *args = (jammer_args_t *)arg;
     network_t *network = args->network;
     volatile bool *stop_flag = args->stop_flag;

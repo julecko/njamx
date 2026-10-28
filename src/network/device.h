@@ -1,6 +1,7 @@
 #ifndef NETWORK_DEVICE_H
 #define NETWORK_DEVICE_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef enum device_state {
@@ -20,6 +21,7 @@ typedef struct device {
     uint8_t mac[6];
     device_state_t state;
     device_role_t role;
+    bool jamming;
 } device_t;
 
 /**
