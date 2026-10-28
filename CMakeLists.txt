@@ -48,6 +48,7 @@ if (CMAKE_C_COMPILER)
         src/network/forgery.c
         src/process/cli.c
         src/process/cli_commands.c
+        src/process/jammer.c
         src/tools/mac_change.c
     )
 endif()

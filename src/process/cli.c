@@ -1,14 +1,16 @@
 #include "process/cli.h"
 
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
+
 #include <termios.h>
 
 #include "network/device.h"
@@ -100,7 +102,7 @@ static size_t collect_visible(network_t *network, size_t *out) {
     size_t count = 0;
     pthread_mutex_lock(&network->lock);
     for (size_t i = 0; i < network->length; i++) {
-        if (network->devices[i].state != DEVICE_STATE_DEAD) {
+        if (network->devices[i].state != DEVICE_STATE_DEAD || network->devices[i].jamming) {
             out[count++] = i;
         }
     }
@@ -109,7 +111,7 @@ static size_t collect_visible(network_t *network, size_t *out) {
 }
 
 static void draw(network_t *network, const size_t *visible, size_t visible_count, size_t offset,
-                  size_t max_visible, const char *status_line, const char *input) {
+                 size_t max_visible, const char *status_line, const char *input) {
     printf(TOP_LEFT_CODE CLEAR_SCREEN_CODE);
 
     printf("njamx - %zu known device(s)\n", visible_count);
@@ -130,12 +132,12 @@ static void draw(network_t *network, const size_t *visible, size_t visible_count
 
         printf("%-5zu %s%-16s%s %-18s %-8s %s%-14s%s %s%s%s\n", k + 1, ip_color(d->role), ip_str,
                COLOR_RESET, mac_str, role_str(d->role), state_color(d->state), state_str(d->state),
-               COLOR_RESET, d->jamming ? COLOR_JAMMING : COLOR_RESET,
-               d->jamming ? "true" : "false", COLOR_RESET);
+               COLOR_RESET, d->jamming ? COLOR_JAMMING : COLOR_RESET, d->jamming ? "true" : "false",
+               COLOR_RESET);
     }
     pthread_mutex_unlock(&network->lock);
 
-    printf("\n[Up/Down] scroll  commands: help, scan, quit\n");
+    printf("\n[Up/Down] scroll  commands: help, scan, timeout, quit\n");
     if (status_line[0] != '\0')
         printf("%s\n", status_line);
     printf("njamx> %s", input);
@@ -143,7 +145,7 @@ static void draw(network_t *network, const size_t *visible, size_t visible_count
 }
 
 void cli_run(network_t *network, const network_socket_t *sock, const uint8_t src_mac[6],
-             int timeout_sec) {
+             atomic_int *timeout_sec, atomic_bool *quit) {
     size_t *visible = malloc(network->length * sizeof(size_t));
     if (!visible)
         return;
@@ -158,15 +160,18 @@ void cli_run(network_t *network, const network_socket_t *sock, const uint8_t src
     size_t input_len = 0;
     char status_line[STATUS_MAX] = {0};
     cli_context_t ctx = {.network = network,
-                        .sock = sock,
-                        .src_mac = src_mac,
-                        .timeout_sec = timeout_sec,
-                        .visible = visible,
-                        .visible_count = visible_count};
+                         .sock = sock,
+                         .src_mac = src_mac,
+                         .timeout_sec = timeout_sec,
+                         .visible = visible,
+                         .visible_count = visible_count};
 
     draw(network, visible, visible_count, offset, max_visible, status_line, input);
 
     for (;;) {
+        if (atomic_load(quit))
+            break;
+
         char c;
         if (read(STDIN_FILENO, &c, 1) <= 0)
             continue;
@@ -220,6 +225,7 @@ void cli_run(network_t *network, const network_socket_t *sock, const uint8_t src
         draw(network, visible, visible_count, offset, max_visible, status_line, input);
     }
 
+    atomic_store(quit, true);
     free(visible);
     disable_raw_mode();
 }

@@ -20,7 +20,22 @@ static void cmd_help(const char *args, cli_context_t *ctx, char *status_line, si
     (void)args;
     (void)ctx;
     (void)should_quit;
-    snprintf(status_line, status_cap, "Commands: help, scan, quit/exit/q");
+    snprintf(status_line, status_cap, "Commands: help, scan, timeout, quit/exit/q");
+}
+
+static void cmd_timeout(const char *args, cli_context_t *ctx, char *status_line,
+                        size_t status_cap, bool *should_quit) {
+    (void)should_quit;
+
+    char *end;
+    long value = strtol(args, &end, 10);
+    if (end == args || *end != '\0' || value <= 0) {
+        snprintf(status_line, status_cap, "Usage: timeout <seconds>");
+        return;
+    }
+
+    atomic_store(ctx->timeout_sec, (int)value);
+    snprintf(status_line, status_cap, "Scan timeout set to %ld second(s)", value);
 }
 
 static void cmd_scan(const char *args, cli_context_t *ctx, char *status_line, size_t status_cap,
@@ -40,7 +55,7 @@ static void cmd_scan(const char *args, cli_context_t *ctx, char *status_line, si
     }
     pthread_mutex_unlock(&ctx->network->lock);
 
-    int found = scanner_scan(ctx->network, ctx->sock, ctx->src_mac, ctx->timeout_sec);
+    int found = scanner_scan(ctx->network, ctx->sock, ctx->src_mac, atomic_load(ctx->timeout_sec));
     if (found < 0)
         snprintf(status_line, status_cap, "Scan failed: couldn't send any ARP request");
     else
@@ -150,14 +165,84 @@ static void cmd_add(const char *args, cli_context_t *ctx, char *status_line, siz
     pthread_mutex_unlock(&ctx->network->lock);
 }
 
+static void cmd_remove(const char *args, cli_context_t *ctx, char *status_line, size_t status_cap,
+                       bool *should_quit) {
+    (void)should_quit;
+
+    char *end;
+    long idx = strtol(args, &end, 10);
+    if (end == args || *end != '\0') {
+        snprintf(status_line, status_cap, "Usage: jam <device-number>");
+        return;
+    }
+    if (idx < 1 || (size_t)idx > ctx->visible_count) {
+        snprintf(status_line, status_cap, "Invalid device number: %ld", idx);
+        return;
+    }
+    pthread_mutex_lock(&ctx->network->lock);
+    device_t *device = &ctx->network->devices[ctx->visible[idx - 1]];
+    device->state = DEVICE_STATE_DEAD;
+    device->jamming = false;
+    pthread_mutex_unlock(&ctx->network->lock);
+}
+
+static void cmd_all(const char *args, cli_context_t *ctx, char *status_line, size_t status_cap,
+                    bool *should_quit) {
+    (void)should_quit;
+
+    pthread_mutex_lock(&ctx->network->lock);
+    for (size_t i = 0; i < ctx->visible_count; i++) {
+        device_t *device = &ctx->network->devices[ctx->visible[i]];
+        if (device->role != DEVICE_ROLE_ROUTER) {
+            device->jamming = true;
+        }
+    }
+
+    pthread_mutex_unlock(&ctx->network->lock);
+}
+
+static void cmd_none(const char *args, cli_context_t *ctx, char *status_line, size_t status_cap,
+                     bool *should_quit) {
+    (void)should_quit;
+
+    pthread_mutex_lock(&ctx->network->lock);
+    for (size_t i = 0; i < ctx->network->length; i++) {
+        device_t *device = &ctx->network->devices[i];
+        if (device->role != DEVICE_ROLE_ROUTER) {
+            device->jamming = false;
+        }
+    }
+
+    pthread_mutex_unlock(&ctx->network->lock);
+}
+
+static void cmd_armagedon(const char *args, cli_context_t *ctx, char *status_line,
+                          size_t status_cap, bool *should_quit) {
+    (void)should_quit;
+
+    pthread_mutex_lock(&ctx->network->lock);
+    for (size_t i = 0; i < ctx->network->length; i++) {
+        device_t *device = &ctx->network->devices[i];
+        if (device->role != DEVICE_ROLE_ROUTER) {
+            device->jamming = true;
+        }
+    }
+
+    pthread_mutex_unlock(&ctx->network->lock);
+}
+
 typedef struct {
     const char *name;
     cli_command_fn fn;
 } cli_command_entry_t;
 
 static const cli_command_entry_t COMMANDS[] = {
-    {"help", cmd_help}, {"scan", cmd_scan}, {"quit", cmd_quit},     {"exit", cmd_quit},
-    {"q", cmd_quit},    {"jam", cmd_jam},   {"router", cmd_router}, {"add", cmd_add}};
+    {"help", cmd_help},       {"scan", cmd_scan},     {"timeout", cmd_timeout},
+    {"quit", cmd_quit},       {"exit", cmd_quit},     {"q", cmd_quit},
+    {"jam", cmd_jam},         {"router", cmd_router}, {"add", cmd_add},
+    {"remove", cmd_remove},   {"all", cmd_all},       {"none", cmd_none},
+    {"armagedon", cmd_armagedon}};
+
 #define COMMAND_COUNT (sizeof(COMMANDS) / sizeof(COMMANDS[0]))
 
 void cli_run_command(const char *input, cli_context_t *ctx, char *status_line, size_t status_cap,

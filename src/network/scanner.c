@@ -11,7 +11,7 @@
 #include "network/device.h"
 
 int scanner_scan(network_t *network, const network_socket_t *sock, const uint8_t src_mac[6],
-                  int timeout_sec) {
+                 int timeout_sec) {
     uint32_t src_ip = htonl(network->my_ip);
     size_t sent = 0;
 
@@ -40,8 +40,8 @@ int scanner_scan(network_t *network, const network_socket_t *sock, const uint8_t
         struct timespec now;
         clock_gettime(CLOCK_MONOTONIC, &now);
 
-        long remaining_ms = (deadline.tv_sec - now.tv_sec) * 1000 +
-                             (deadline.tv_nsec - now.tv_nsec) / 1000000;
+        long remaining_ms =
+            (deadline.tv_sec - now.tv_sec) * 1000 + (deadline.tv_nsec - now.tv_nsec) / 1000000;
         if (remaining_ms <= 0)
             break;
 
@@ -62,15 +62,6 @@ int scanner_scan(network_t *network, const network_socket_t *sock, const uint8_t
         }
         pthread_mutex_unlock(&network->lock);
     }
-
-#ifdef DEBUG_MODE
-    pthread_mutex_lock(&network->lock);
-    for (size_t i = 0; i < network->length; i++) {
-        if (network->devices[i].state == DEVICE_STATE_ALIVE)
-            network_device_print(&network->devices[i]);
-    }
-    pthread_mutex_unlock(&network->lock);
-#endif
 
     return found;
 }

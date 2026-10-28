@@ -1,6 +1,7 @@
 #ifndef PROCESS_CLI_COMMANDS_H
 #define PROCESS_CLI_COMMANDS_H
 
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -15,7 +16,7 @@ typedef struct {
     network_t *network;
     const network_socket_t *sock;
     const uint8_t *src_mac;
-    int timeout_sec;
+    atomic_int *timeout_sec;
 
     // Maps the on-screen row number shown to the user (visible[k] for row
     // k) back to its real index in network->devices[]. Snapshotted as of

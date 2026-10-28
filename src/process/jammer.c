@@ -1,5 +1,6 @@
 #include "./process/jammer.h"
 
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -15,7 +16,7 @@
 void *jammer_process(void *arg) {
     jammer_args_t *args = (jammer_args_t *)arg;
     network_t *network = args->network;
-    volatile bool *stop_flag = args->stop_flag;
+    atomic_bool *stop_flag = args->stop_flag;
 
     network_socket_t network_socket = args->network_socket;
     uint8_t random_mac[6];
@@ -53,7 +54,7 @@ void *jammer_process(void *arg) {
                 }
             }
         }
-        if (*stop_flag) {
+        if (atomic_load(stop_flag)) {
             cleanup--;
         }
         pthread_mutex_unlock(&network->lock);

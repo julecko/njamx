@@ -1,3 +1,4 @@
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -5,6 +6,7 @@
 #include <string.h>
 #include <time.h>
 
+#include <pthread.h>
 #include <unistd.h>
 
 #include <linux/if_ether.h>
@@ -17,6 +19,7 @@
 #include "network/scanner.h"
 #include "network/socket.h"
 #include "process/cli.h"
+#include "process/jammer.h"
 #include "tools/mac_change.h"
 #include "version.h"
 
@@ -76,7 +79,25 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    cli_run(&network, &sock, program_mac, args.timeout_sec);
+    atomic_int timeout_sec = args.timeout_sec;
+    atomic_bool quit = false;
+
+    jammer_args_t jammer_args = {.network = &network,
+                                 .interface = args.interface,
+                                 .stop_flag = &quit,
+                                 .network_socket = sock};
+    pthread_t jammer_thread;
+    if (pthread_create(&jammer_thread, NULL, jammer_process, &jammer_args) != 0) {
+        fprintf(stderr, "Couldnt start jammer thread\n");
+        network_socket_close(&sock);
+        network_delete(&network);
+        return 1;
+    }
+
+    cli_run(&network, &sock, program_mac, &timeout_sec, &quit);
+
+    printf("Cleaning up, can take up few seconds...\n");
+    pthread_join(jammer_thread, NULL);
 
     network_socket_close(&sock);
     network_delete(&network);
