@@ -38,7 +38,7 @@ void *jammer_process(void *arg) {
 
                 uint32_t device_ip = htonl(device_client->ip);
                 device_state_t state = device_client->state;
-                if (state == DEVICE_STATE_ALIVE || state == DEVICE_STATE_ADDED) {
+                if (device_client->jamming) {
                     network_forgery_mac(random_mac);
 
                     arp_send_reply(&network_socket, device_router->mac, random_mac, device_ip,
