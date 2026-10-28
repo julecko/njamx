@@ -87,19 +87,31 @@ done
 # Build
 BUILD_DIR="build"
 
-mkdir -p "$BUILD_DIR"
+# If this script itself was launched via sudo (e.g. so the final run has
+# the privileges the raw-socket binary needs), don't let the actual
+# configure/build steps run as root too - that just leaves root-owned
+# files in $BUILD_DIR that the invoking user can no longer rebuild over.
+# Step back down to the original user for everything except running the
+# built binary.
+if [[ $EUID -eq 0 && -n "${SUDO_USER:-}" ]]; then
+    AS_BUILD_USER=(sudo -u "$SUDO_USER")
+else
+    AS_BUILD_USER=()
+fi
+
+"${AS_BUILD_USER[@]}" mkdir -p "$BUILD_DIR"
 
 
 echo
 echo "Configuring ($BUILD_TYPE)..."
-cmake -S . -B "$BUILD_DIR" \
+"${AS_BUILD_USER[@]}" cmake -S . -B "$BUILD_DIR" \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
     -DEXECUTABLE_OUTPUT_NAME="$EXEC_NAME" \
     || die "CMake configuration failed"
 
 echo
 echo "Building..."
-cmake --build "$BUILD_DIR" --config "$BUILD_TYPE" \
+"${AS_BUILD_USER[@]}" cmake --build "$BUILD_DIR" --config "$BUILD_TYPE" \
     || die "Build failed"
 
 # Run

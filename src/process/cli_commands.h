@@ -16,6 +16,12 @@ typedef struct {
     const network_socket_t *sock;
     const uint8_t *src_mac;
     int timeout_sec;
+
+    // Maps the on-screen row number shown to the user (visible[k] for row
+    // k) back to its real index in network->devices[]. Snapshotted as of
+    // the last redraw, so "device N" always means what's on screen.
+    const size_t *visible;
+    size_t visible_count;
 } cli_context_t;
 
 /**

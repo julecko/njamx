@@ -19,8 +19,12 @@
 #define TOP_LEFT_CODE "\033[H"
 #define CLEAR_SCREEN_CODE "\033[2J"
 #define COLOR_RESET "\033[0m"
-#define COLOR_ROUTER "\033[36m"
-#define COLOR_CLIENT "\033[32m"
+#define COLOR_IP_CLIENT "\033[37m"
+#define COLOR_IP_ROUTER "\033[38;5;208m"
+#define COLOR_STATE_ADDED "\033[34m"
+#define COLOR_STATE_ALIVE "\033[32m"
+#define COLOR_STATE_DISCONNECTING "\033[33m"
+#define COLOR_JAMMING "\033[31m"
 
 #define INPUT_MAX 256
 #define STATUS_MAX 256
@@ -54,8 +58,8 @@ static size_t get_visible_rows(void) {
     return 20;
 }
 
-static const char *role_color(device_role_t role) {
-    return role == DEVICE_ROLE_ROUTER ? COLOR_ROUTER : COLOR_CLIENT;
+static const char *ip_color(device_role_t role) {
+    return role == DEVICE_ROLE_ROUTER ? COLOR_IP_ROUTER : COLOR_IP_CLIENT;
 }
 
 static const char *role_str(device_role_t role) {
@@ -74,6 +78,20 @@ static const char *state_str(device_state_t state) {
             return "disconnecting";
     }
     return "unknown";
+}
+
+static const char *state_color(device_state_t state) {
+    switch (state) {
+        case DEVICE_STATE_ADDED:
+            return COLOR_STATE_ADDED;
+        case DEVICE_STATE_ALIVE:
+            return COLOR_STATE_ALIVE;
+        case DEVICE_STATE_DISCONNECTING:
+            return COLOR_STATE_DISCONNECTING;
+        case DEVICE_STATE_DEAD:
+            return COLOR_RESET;
+    }
+    return COLOR_RESET;
 }
 
 // Collects indices of every non-dead device into out (caller-sized to
@@ -95,7 +113,7 @@ static void draw(network_t *network, const size_t *visible, size_t visible_count
     printf(TOP_LEFT_CODE CLEAR_SCREEN_CODE);
 
     printf("njamx - %zu known device(s)\n", visible_count);
-    printf("%-5s %-16s %-18s %-8s %s\n", "#", "IP", "MAC", "ROLE", "STATE");
+    printf("%-5s %-16s %-18s %-8s %-14s %s\n", "#", "IP", "MAC", "ROLE", "STATE", "JAMMING");
 
     pthread_mutex_lock(&network->lock);
     size_t shown = 0;
@@ -110,8 +128,10 @@ static void draw(network_t *network, const size_t *visible, size_t visible_count
         snprintf(mac_str, sizeof(mac_str), "%02x:%02x:%02x:%02x:%02x:%02x", d->mac[0], d->mac[1],
                  d->mac[2], d->mac[3], d->mac[4], d->mac[5]);
 
-        printf("%s%-5zu %-16s %-18s %-8s %s%s\n", role_color(d->role), k + 1, ip_str, mac_str,
-               role_str(d->role), state_str(d->state), COLOR_RESET);
+        printf("%-5zu %s%-16s%s %-18s %-8s %s%-14s%s %s%s%s\n", k + 1, ip_color(d->role), ip_str,
+               COLOR_RESET, mac_str, role_str(d->role), state_color(d->state), state_str(d->state),
+               COLOR_RESET, d->jamming ? COLOR_JAMMING : COLOR_RESET,
+               d->jamming ? "true" : "false", COLOR_RESET);
     }
     pthread_mutex_unlock(&network->lock);
 
@@ -137,8 +157,12 @@ void cli_run(network_t *network, const network_socket_t *sock, const uint8_t src
     char input[INPUT_MAX] = {0};
     size_t input_len = 0;
     char status_line[STATUS_MAX] = {0};
-    cli_context_t ctx = {
-        .network = network, .sock = sock, .src_mac = src_mac, .timeout_sec = timeout_sec};
+    cli_context_t ctx = {.network = network,
+                        .sock = sock,
+                        .src_mac = src_mac,
+                        .timeout_sec = timeout_sec,
+                        .visible = visible,
+                        .visible_count = visible_count};
 
     draw(network, visible, visible_count, offset, max_visible, status_line, input);
 
@@ -167,6 +191,7 @@ void cli_run(network_t *network, const network_socket_t *sock, const uint8_t src
             }
         } else if (c == '\n' || c == '\r') {
             input[input_len] = '\0';
+            ctx.visible_count = visible_count;
             cli_run_command(input, &ctx, status_line, STATUS_MAX, &should_quit);
             input_len = 0;
             input[0] = '\0';
