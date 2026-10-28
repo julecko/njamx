@@ -7,6 +7,7 @@ typedef enum device_state {
     DEVICE_STATE_DEAD,
     DEVICE_STATE_ADDED,
     DEVICE_STATE_ALIVE,
+    DEVICE_STATE_DISCONNECTING,
 } device_state_t;
 
 typedef enum device_role {
@@ -16,10 +17,10 @@ typedef enum device_role {
 
 typedef struct device {
     uint32_t ip;
+    uint8_t mac[6];
     device_state_t state;
     device_role_t role;
 } device_t;
-
 
 /**
  * @brief Make a new device in the dead state with the client role.

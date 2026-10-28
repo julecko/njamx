@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <pthread.h>
+
 #include "network/device.h"
 
 typedef struct network {
@@ -11,6 +13,8 @@ typedef struct network {
     uint32_t mask;
     device_t *devices;
     size_t length;
+
+    pthread_mutex_t lock;
 } network_t;
 
 /**

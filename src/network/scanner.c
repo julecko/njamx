@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 #include <arpa/inet.h>
@@ -50,6 +51,7 @@ int scanner_scan(network_t *network, const network_socket_t *sock, const uint8_t
         for (size_t i = 0; i < network->length; i++) {
             device_t *device = &network->devices[i];
             if (device->ip == sender_ip && device->state != DEVICE_STATE_ALIVE) {
+                memcpy(device->mac, sender_mac, sizeof(device->mac));
                 device->state = DEVICE_STATE_ALIVE;
                 found++;
                 break;
