@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,7 +62,10 @@ int main(int argc, char *argv[]) {
     }
 
     network_t network = network_create(args.ip);
-    if (!network.devices || network.length == 0) {
+    pthread_mutex_lock(&network.lock);
+    bool network_empty = !network.devices || network.length == 0;
+    pthread_mutex_unlock(&network.lock);
+    if (network_empty) {
         fprintf(stderr, "Network initialization went wrong\n");
         return 1;
     }
@@ -73,9 +77,12 @@ int main(int argc, char *argv[]) {
     }
 
     int found = scanner_scan(&network, &sock, program_mac, args.timeout_sec);
-    printf("Found %d device(s) alive out of %zu\n", found < 0 ? 0 : found, network.length);
+    pthread_mutex_lock(&network.lock);
+    size_t network_length = network.length;
+    pthread_mutex_unlock(&network.lock);
+    printf("Found %d device(s) alive out of %zu\n", found < 0 ? 0 : found, network_length);
 
-    cli_run(&network);
+    cli_run(&network, &sock, program_mac, args.timeout_sec);
 
     network_socket_close(&sock);
     network_delete(&network);

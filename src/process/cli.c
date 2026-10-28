@@ -1,7 +1,9 @@
 #include "process/cli.h"
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <arpa/inet.h>
@@ -10,6 +12,7 @@
 #include <termios.h>
 
 #include "network/device.h"
+#include "process/cli_commands.h"
 
 #define ALTERNATE_SCREEN_CODE "\033[?1049h"
 #define EXIT_ALTERNATE_SCREEN_CODE "\033[?1049l"
@@ -18,6 +21,9 @@
 #define COLOR_RESET "\033[0m"
 #define COLOR_ROUTER "\033[36m"
 #define COLOR_CLIENT "\033[32m"
+
+#define INPUT_MAX 256
+#define STATUS_MAX 256
 
 static struct termios orig_termios;
 
@@ -43,8 +49,8 @@ static void enable_raw_mode(void) {
 
 static size_t get_visible_rows(void) {
     struct winsize ws;
-    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_row > 4)
-        return ws.ws_row - 4;
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_row > 6)
+        return ws.ws_row - 6;
     return 20;
 }
 
@@ -85,7 +91,7 @@ static size_t collect_visible(network_t *network, size_t *out) {
 }
 
 static void draw(network_t *network, const size_t *visible, size_t visible_count, size_t offset,
-                  size_t max_visible) {
+                  size_t max_visible, const char *status_line, const char *input) {
     printf(TOP_LEFT_CODE CLEAR_SCREEN_CODE);
 
     printf("njamx - %zu known device(s)\n", visible_count);
@@ -109,11 +115,15 @@ static void draw(network_t *network, const size_t *visible, size_t visible_count
     }
     pthread_mutex_unlock(&network->lock);
 
-    printf("\n[Up/Down or j/k] scroll  [q] quit\n");
+    printf("\n[Up/Down] scroll  commands: help, scan, quit\n");
+    if (status_line[0] != '\0')
+        printf("%s\n", status_line);
+    printf("njamx> %s", input);
     fflush(stdout);
 }
 
-void cli_run(network_t *network) {
+void cli_run(network_t *network, const network_socket_t *sock, const uint8_t src_mac[6],
+             int timeout_sec) {
     size_t *visible = malloc(network->length * sizeof(size_t));
     if (!visible)
         return;
@@ -123,14 +133,24 @@ void cli_run(network_t *network) {
     size_t max_visible = get_visible_rows();
     size_t offset = 0;
     size_t visible_count = collect_visible(network, visible);
-    draw(network, visible, visible_count, offset, max_visible);
+
+    char input[INPUT_MAX] = {0};
+    size_t input_len = 0;
+    char status_line[STATUS_MAX] = {0};
+    cli_context_t ctx = {
+        .network = network, .sock = sock, .src_mac = src_mac, .timeout_sec = timeout_sec};
+
+    draw(network, visible, visible_count, offset, max_visible, status_line, input);
 
     for (;;) {
         char c;
         if (read(STDIN_FILENO, &c, 1) <= 0)
             continue;
 
-        if (c == 'q' || c == 'Q' || c == '\x03') {
+        bool should_quit = false;
+        bool redraw = true;
+
+        if (c == '\x03') {
             break;
         } else if (c == '\x1b') {
             char seq[2];
@@ -140,25 +160,39 @@ void cli_run(network_t *network) {
                 } else if (seq[0] == '[' && seq[1] == 'A' && offset > 0) {
                     offset--;
                 } else {
-                    continue;
+                    redraw = false;
                 }
             } else {
                 break;
             }
-        } else if (c == 'j' && offset + max_visible < visible_count) {
-            offset++;
-        } else if (c == 'k' && offset > 0) {
-            offset--;
+        } else if (c == '\n' || c == '\r') {
+            input[input_len] = '\0';
+            cli_run_command(input, &ctx, status_line, STATUS_MAX, &should_quit);
+            input_len = 0;
+            input[0] = '\0';
+        } else if (c == 127 || c == '\b') {
+            if (input_len > 0) {
+                input_len--;
+                input[input_len] = '\0';
+            }
+        } else if (c >= 32 && c <= 126 && input_len < INPUT_MAX - 1) {
+            input[input_len++] = c;
+            input[input_len] = '\0';
         } else {
-            continue;
+            redraw = false;
         }
+
+        if (should_quit)
+            break;
+        if (!redraw)
+            continue;
 
         max_visible = get_visible_rows();
         visible_count = collect_visible(network, visible);
         if (offset > 0 && offset + max_visible > visible_count) {
             offset = visible_count > max_visible ? visible_count - max_visible : 0;
         }
-        draw(network, visible, visible_count, offset, max_visible);
+        draw(network, visible, visible_count, offset, max_visible, status_line, input);
     }
 
     free(visible);

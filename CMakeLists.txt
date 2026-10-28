@@ -47,6 +47,7 @@ if (CMAKE_C_COMPILER)
         src/network/iface.c
         src/network/forgery.c
         src/process/cli.c
+        src/process/cli_commands.c
         src/tools/mac_change.c
     )
 endif()
@@ -59,7 +60,7 @@ if (CMAKE_CXX_COMPILER)
 endif()
 
 # Default exec name
-if(EXECUTABLE_OUTPUT_NAME)
+if(NOT EXECUTABLE_OUTPUT_NAME)
     set(EXECUTABLE_OUTPUT_NAME "njamx")
 endif()
 

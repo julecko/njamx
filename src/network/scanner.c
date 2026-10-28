@@ -15,6 +15,7 @@ int scanner_scan(network_t *network, const network_socket_t *sock, const uint8_t
     uint32_t src_ip = htonl(network->my_ip);
     size_t sent = 0;
 
+    pthread_mutex_lock(&network->lock);
     for (size_t i = 0; i < network->length; i++) {
         device_t *device = &network->devices[i];
         if (arp_send_request(sock, src_mac, src_ip, htonl(device->ip)) < 0) {
@@ -23,6 +24,7 @@ int scanner_scan(network_t *network, const network_socket_t *sock, const uint8_t
         }
         sent++;
     }
+    pthread_mutex_unlock(&network->lock);
 
     if (sent == 0)
         return -1;
@@ -48,6 +50,7 @@ int scanner_scan(network_t *network, const network_socket_t *sock, const uint8_t
         if (arp_recv_reply(sock, &sender_ip, sender_mac) != 0)
             break;
 
+        pthread_mutex_lock(&network->lock);
         for (size_t i = 0; i < network->length; i++) {
             device_t *device = &network->devices[i];
             if (device->ip == sender_ip && device->state != DEVICE_STATE_ALIVE) {
@@ -57,13 +60,16 @@ int scanner_scan(network_t *network, const network_socket_t *sock, const uint8_t
                 break;
             }
         }
+        pthread_mutex_unlock(&network->lock);
     }
 
 #ifdef DEBUG_MODE
+    pthread_mutex_lock(&network->lock);
     for (size_t i = 0; i < network->length; i++) {
         if (network->devices[i].state == DEVICE_STATE_ALIVE)
             network_device_print(&network->devices[i]);
     }
+    pthread_mutex_unlock(&network->lock);
 #endif
 
     return found;

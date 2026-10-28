@@ -74,9 +74,11 @@ network_t network_create(const char *ip_with_mask) {
 }
 
 void network_delete(network_t *network) {
+    pthread_mutex_lock(&network->lock);
     if (network->devices) {
         free(network->devices);
         network->devices = NULL;
     }
     network->length = 0;
+    pthread_mutex_unlock(&network->lock);
 }
