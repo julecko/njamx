@@ -4,9 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <pthread.h>
-
 #include "network/device.h"
+#include "platform/thread_compat.h"
 
 typedef struct network {
     uint32_t my_ip;

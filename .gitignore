@@ -18,6 +18,7 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 /build/
+/third_party/
 
 # Swap
 *~

@@ -4,13 +4,24 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef _WIN32
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#else
 #include <sys/types.h>
+#endif
+
+#include <pcap.h>
 
 #include "network/network.h"
 
+// Backed by libpcap on Linux and Npcap (the Windows port of libpcap's
+// API) on Windows, so the same capture/injection code runs unmodified
+// on both platforms.
 typedef struct network_socket {
-    int fd;
-    int ifindex;
+    pcap_t *handle;
+    long timeout_sec;
+    long timeout_usec;
 } network_socket_t;
 
 int network_socket_open(network_socket_t *s, const char *ifname, uint16_t ethertype,

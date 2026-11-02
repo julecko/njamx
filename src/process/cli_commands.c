@@ -4,11 +4,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
-#include <pthread.h>
+#endif
 
 #include "network/device.h"
 #include "network/scanner.h"
+#include "platform/thread_compat.h"
 
 #define VERB_MAX 64
 

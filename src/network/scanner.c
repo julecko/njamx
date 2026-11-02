@@ -3,12 +3,16 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <arpa/inet.h>
+#endif
 
 #include "network/arp.h"
 #include "network/device.h"
+#include "platform/compat.h"
 
 int scanner_scan(network_t *network, const network_socket_t *sock, const uint8_t src_mac[6],
                  int timeout_sec) {
@@ -29,21 +33,16 @@ int scanner_scan(network_t *network, const network_socket_t *sock, const uint8_t
     if (sent == 0)
         return -1;
 
-    struct timespec deadline;
-    clock_gettime(CLOCK_MONOTONIC, &deadline);
-    deadline.tv_sec += timeout_sec;
+    uint64_t deadline_ms = platform_monotonic_ms() + (uint64_t)timeout_sec * 1000ull;
 
     int found = 0;
     uint32_t sender_ip;
     uint8_t sender_mac[6];
     while ((size_t)found < sent) {
-        struct timespec now;
-        clock_gettime(CLOCK_MONOTONIC, &now);
-
-        long remaining_ms =
-            (deadline.tv_sec - now.tv_sec) * 1000 + (deadline.tv_nsec - now.tv_nsec) / 1000000;
-        if (remaining_ms <= 0)
+        uint64_t now_ms = platform_monotonic_ms();
+        if (now_ms >= deadline_ms)
             break;
+        long remaining_ms = (long)(deadline_ms - now_ms);
 
         network_socket_set_timeout(sock, remaining_ms / 1000, (remaining_ms % 1000) * 1000);
 
