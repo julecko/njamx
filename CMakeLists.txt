@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 
 # When stable set project version to 1.0.0
-project(njamx VERSION 0.0.0 LANGUAGES C CXX)
+project(njamx VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
