@@ -211,9 +211,33 @@ if(WIN32)
         install(FILES "${NPCAP_INSTALLER_EXE}" DESTINATION .)
     endif()
 
+    # CPack's NSIS generator has no built-in "install for me only" vs
+    # "install for all users" page (that needs NSIS's MultiUser.nsh,
+    # which isn't exposed through any documented CPACK_NSIS_* hook), so
+    # this is a configure-time choice between two installer builds
+    # rather than a radio button inside one of them.
+    option(NJAMX_NSIS_ALL_USERS
+        "Build the njamx installer for all users (Program Files, needs admin) instead of the current user only (no admin needed)"
+        OFF)
+
+    if (NJAMX_NSIS_ALL_USERS)
+        set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
+        # Per-user (the default) never needs elevation; only request it
+        # here, since writing under Program Files does.
+        set(CPACK_NSIS_DEFINES "RequestExecutionLevel admin")
+    else()
+        set(CPACK_NSIS_INSTALL_ROOT "$LOCALAPPDATA\\\\Programs")
+    endif()
+
     set(CPACK_GENERATOR "NSIS")
     set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
-    set(CPACK_PACKAGE_EXECUTABLES "njamx;njamx")
+    # Lets the installer ask the user whether njamx's folder should be
+    # added to PATH, instead of always doing it or never doing it.
+    set(CPACK_NSIS_MODIFY_PATH ON)
+    # Deliberately not setting CPACK_PACKAGE_EXECUTABLES: that's what
+    # makes CPack's NSIS template create Start Menu (and, transitively,
+    # desktop) shortcuts, which weren't asked for here.
+
     # Silently (re)installs/updates Npcap right after njamx's own files
     # land. Npcap's installer no-ops safely if an up to date copy is
     # already present.
@@ -236,9 +260,14 @@ else()
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_SOURCE_DIR}/packaging/postinst")
 endif()
 
+install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION "${CMAKE_INSTALL_DOCDIR}")
+
 set(CPACK_PACKAGE_NAME "njamx")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_PACKAGE_CONTACT "Julecko")
 set(CPACK_PACKAGE_VENDOR "Julecko")
+# Shows as the installer's license-agreement page on NSIS; harmless
+# elsewhere (e.g. the DEB generator just ignores it).
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 
 include(CPack)
