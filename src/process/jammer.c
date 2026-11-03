@@ -20,6 +20,7 @@ void *jammer_process(void *arg) {
 
     network_socket_t network_socket = args->network_socket;
     uint8_t random_mac[6];
+    network_forgery_mac(random_mac);
 
     int cleanup = 3;
     while (cleanup) {
@@ -40,8 +41,6 @@ void *jammer_process(void *arg) {
                 uint32_t device_ip = htonl(device_client->ip);
                 device_state_t state = device_client->state;
                 if (device_client->jamming) {
-                    network_forgery_mac(random_mac);
-
                     arp_send_reply(&network_socket, device_router->mac, random_mac, device_ip,
                                    device_router->mac, router_ip);
                     arp_send_reply(&network_socket, device_client->mac, random_mac, router_ip,
