@@ -47,6 +47,28 @@ Page custom PathPageCreate PathPageLeave
 !insertmacro MUI_LANGUAGE "English"
 
 Function .onInit
+  ; A genuinely non-admin account has no way to pick "install for all
+  ; users" on MULTIUSER_PAGE_INSTALLMODE below - MultiUser.nsh just
+  ; greys that radio out for them, with no explanation and no recourse.
+  ; Ask up front instead, and offer to relaunch elevated (which, for a
+  ; non-admin account, means Windows' own UAC prompt asking for an
+  ; administrator's credentials) if that's what they actually want.
+  ; Admins aren't affected: they already get Highest's own UAC consent
+  ; prompt and the full choice of modes further down, unchanged.
+  UserInfo::GetAccountType
+  Pop $0
+  ${If} $0 != "Admin"
+    MessageBox MB_YESNO|MB_ICONQUESTION "You're not an administrator on this machine, so njamx will install for your account only by default.$\r$\n$\r$\nInstall for all users instead? You'll be asked for an administrator's credentials." IDYES onInit_elevate
+    Goto onInit_elevate_done
+    onInit_elevate:
+      ; Fire-and-forget: if the credential prompt is cancelled, this
+      ; instance has already quit and nothing further happens, same as
+      ; most self-elevating NSIS installers - the user just reruns it.
+      ExecShell "runas" "$EXEPATH" "/AllUsers"
+      Quit
+    onInit_elevate_done:
+  ${EndIf}
+
   !insertmacro MULTIUSER_INIT
 
   ; ShCtx/the remembered install mode both come from MULTIUSER_INIT above,
