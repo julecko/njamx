@@ -48,6 +48,19 @@ Page custom PathPageCreate PathPageLeave
 
 Function .onInit
   !insertmacro MULTIUSER_INIT
+
+  ; ShCtx/the remembered install mode both come from MULTIUSER_INIT above,
+  ; so this checks whichever hive (HKCU/HKLM) the last install (if any)
+  ; used.
+  ReadRegStr $0 ShCtx "${UNINSTKEY}" "UninstallString"
+  ${If} $0 != ""
+    ReadRegStr $1 ShCtx "${UNINSTKEY}" "DisplayVersion"
+    MessageBox MB_YESNO|MB_ICONQUESTION \
+      "njamx $1 is already installed.$\r$\n$\r$\nReinstall / update it?" \
+      IDYES already_installed_continue
+    Abort
+    already_installed_continue:
+  ${EndIf}
 FunctionEnd
 
 Function un.onInit
@@ -71,11 +84,16 @@ Function PathPageCreate
 
   ${NSD_CreateRadioButton} 10u 20u 100% 12u "My account only"
   Pop $RadioUser
-  ${NSD_SetState} $RadioUser ${BST_CHECKED}
 
   ${NSD_CreateRadioButton} 10u 35u 100% 12u "All users (system PATH)"
   Pop $RadioSystem
-  ${If} $MultiUser.InstallMode != "AllUsers"
+
+  ; Default the scope to match the install-mode page's choice, rather
+  ; than always defaulting to "my account only".
+  ${If} $MultiUser.InstallMode == "AllUsers"
+    ${NSD_SetState} $RadioSystem ${BST_CHECKED}
+  ${Else}
+    ${NSD_SetState} $RadioUser ${BST_CHECKED}
     EnableWindow $RadioSystem 0
   ${EndIf}
 
@@ -101,9 +119,25 @@ Section "Install"
   File "${NJAMX_LICENSE}"
   File "update-path.ps1"
 
+  ; Npcap always registers this uninstall entry (both 32- and 64-bit
+  ; Windows redirect a 32-bit installer's HKLM reads here automatically,
+  ; so no SetRegView dance is needed), regardless of which njamx install
+  ; mode/hive was chosen above - Npcap itself always installs machine-wide.
+  ReadRegStr $2 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\NpcapInst" "DisplayVersion"
+  StrCpy $3 "1"
+  ${If} $2 != ""
+    MessageBox MB_YESNO|MB_ICONQUESTION \
+      "Npcap $2 is already installed.$\r$\n$\r$\nReinstall it anyway?" \
+      IDYES npcap_reinstall_yes
+    StrCpy $3 "0"
+    npcap_reinstall_yes:
+  ${EndIf}
+
   ; Interactive on purpose - see CMakeLists.txt for why this isn't /S.
-  File "/oname=npcap-installer.exe" "${NJAMX_NPCAP_EXE}"
-  ExecWait '"$InstDir\npcap-installer.exe"'
+  ${If} $3 == "1"
+    File "/oname=npcap-installer.exe" "${NJAMX_NPCAP_EXE}"
+    ExecWait '"$InstDir\npcap-installer.exe"'
+  ${EndIf}
 
   WriteUninstaller "$InstDir\Uninstall.exe"
 
