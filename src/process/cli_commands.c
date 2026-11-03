@@ -25,7 +25,23 @@ static void cmd_help(const char *args, cli_context_t *ctx, char *status_line, si
     (void)args;
     (void)ctx;
     (void)should_quit;
-    snprintf(status_line, status_cap, "Commands: help, scan, timeout, quit/exit/q");
+    snprintf(status_line, status_cap, "Commands: help, scan, timeout, selfjam, quit/exit/q");
+}
+
+// Whether "all"/"armagedon" also jam our own device (flagged
+// DEVICE_FLAG_MY_DEVICE). Single-threaded (only touched from the CLI's
+// command dispatch), so no lock/atomic needed.
+static bool jam_self = false;
+
+static void cmd_selfjam(const char *args, cli_context_t *ctx, char *status_line,
+                        size_t status_cap, bool *should_quit) {
+    (void)args;
+    (void)ctx;
+    (void)should_quit;
+
+    jam_self = !jam_self;
+    snprintf(status_line, status_cap, "Jamming own device with 'all'/'armagedon' is now %s",
+             jam_self ? "enabled" : "disabled");
 }
 
 static void cmd_timeout(const char *args, cli_context_t *ctx, char *status_line,
@@ -198,9 +214,11 @@ static void cmd_all(const char *args, cli_context_t *ctx, char *status_line, siz
     pthread_mutex_lock(&ctx->network->lock);
     for (size_t i = 0; i < ctx->visible_count; i++) {
         device_t *device = &ctx->network->devices[ctx->visible[i]];
-        if (device->role != DEVICE_ROLE_ROUTER) {
-            device->jamming = true;
-        }
+        if (device->role == DEVICE_ROLE_ROUTER)
+            continue;
+        if (!jam_self && (device->flags & DEVICE_FLAG_MY_DEVICE))
+            continue;
+        device->jamming = true;
     }
 
     pthread_mutex_unlock(&ctx->network->lock);
@@ -228,9 +246,11 @@ static void cmd_armagedon(const char *args, cli_context_t *ctx, char *status_lin
     pthread_mutex_lock(&ctx->network->lock);
     for (size_t i = 0; i < ctx->network->length; i++) {
         device_t *device = &ctx->network->devices[i];
-        if (device->role != DEVICE_ROLE_ROUTER) {
-            device->jamming = true;
-        }
+        if (device->role == DEVICE_ROLE_ROUTER)
+            continue;
+        if (!jam_self && (device->flags & DEVICE_FLAG_MY_DEVICE))
+            continue;
+        device->jamming = true;
     }
 
     pthread_mutex_unlock(&ctx->network->lock);
@@ -242,11 +262,11 @@ typedef struct {
 } cli_command_entry_t;
 
 static const cli_command_entry_t COMMANDS[] = {
-    {"help", cmd_help},       {"scan", cmd_scan},     {"timeout", cmd_timeout},
-    {"quit", cmd_quit},       {"exit", cmd_quit},     {"q", cmd_quit},
-    {"jam", cmd_jam},         {"router", cmd_router}, {"add", cmd_add},
-    {"remove", cmd_remove},   {"all", cmd_all},       {"none", cmd_none},
-    {"armagedon", cmd_armagedon}};
+    {"help", cmd_help},       {"scan", cmd_scan},       {"timeout", cmd_timeout},
+    {"selfjam", cmd_selfjam}, {"quit", cmd_quit},       {"exit", cmd_quit},
+    {"q", cmd_quit},          {"jam", cmd_jam},         {"router", cmd_router},
+    {"add", cmd_add},         {"remove", cmd_remove},   {"all", cmd_all},
+    {"none", cmd_none},       {"armagedon", cmd_armagedon}};
 
 #define COMMAND_COUNT (sizeof(COMMANDS) / sizeof(COMMANDS[0]))
 

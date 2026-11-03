@@ -75,6 +75,9 @@ network_t network_create(const char *ip_with_mask) {
 
     for (uint64_t n = ip_network + 1, i = 0; n < ip_broadcast; n++, i++) {
         network.devices[i] = network_device_create(n);
+        if (n == ip_host) {
+            network.devices[i].flags |= DEVICE_FLAG_MY_DEVICE;
+        }
     }
     printf("Network len: %" PRIu64 "\n", network_len);
     return network;

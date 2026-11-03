@@ -18,6 +18,7 @@ device_t network_device_create(uint32_t ip) {
                       .mac = {0},
                       .role = DEVICE_ROLE_CLIENT,
                       .state = DEVICE_STATE_DEAD,
+                      .flags = DEVICE_FLAG_NONE,
                       .jamming = false};
 };
 

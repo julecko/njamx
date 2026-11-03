@@ -16,11 +16,19 @@ typedef enum device_role {
     DEVICE_ROLE_ROUTER,
 } device_role_t;
 
+typedef enum device_flags {
+    DEVICE_FLAG_NONE = 0,
+    // This device is us (network->my_ip). Highlighted in the CLI, and
+    // excluded from "all"/"armagedon" unless self-jamming is enabled.
+    DEVICE_FLAG_MY_DEVICE = 1 << 0,
+} device_flags_t;
+
 typedef struct device {
     uint32_t ip;
     uint8_t mac[6];
     device_state_t state;
     device_role_t role;
+    device_flags_t flags;
     bool jamming;
 } device_t;
 

@@ -39,6 +39,7 @@
 #define COLOR_RESET "\033[0m"
 #define COLOR_IP_CLIENT "\033[37m"
 #define COLOR_IP_ROUTER "\033[38;5;208m"
+#define COLOR_IP_SELF "\033[1;36m"
 #define COLOR_STATE_ADDED "\033[34m"
 #define COLOR_STATE_ALIVE "\033[32m"
 #define COLOR_STATE_DISCONNECTING "\033[33m"
@@ -134,8 +135,10 @@ static size_t get_visible_rows(void) {
 
 #endif
 
-static const char *ip_color(device_role_t role) {
-    return role == DEVICE_ROLE_ROUTER ? COLOR_IP_ROUTER : COLOR_IP_CLIENT;
+static const char *ip_color(const device_t *d) {
+    if (d->flags & DEVICE_FLAG_MY_DEVICE)
+        return COLOR_IP_SELF;
+    return d->role == DEVICE_ROLE_ROUTER ? COLOR_IP_ROUTER : COLOR_IP_CLIENT;
 }
 
 static const char *role_str(device_role_t role) {
@@ -204,14 +207,18 @@ static void draw(network_t *network, const size_t *visible, size_t visible_count
         snprintf(mac_str, sizeof(mac_str), "%02x:%02x:%02x:%02x:%02x:%02x", d->mac[0], d->mac[1],
                  d->mac[2], d->mac[3], d->mac[4], d->mac[5]);
 
-        printf("%-5zu %s%-16s%s %-18s %-8s %s%-14s%s %s%s%s\n", k + 1, ip_color(d->role), ip_str,
+        char ip_label[INET_ADDRSTRLEN + 8];
+        snprintf(ip_label, sizeof(ip_label), "%s%s", ip_str,
+                 (d->flags & DEVICE_FLAG_MY_DEVICE) ? " (you)" : "");
+
+        printf("%-5zu %s%-16s%s %-18s %-8s %s%-14s%s %s%s%s\n", k + 1, ip_color(d), ip_label,
                COLOR_RESET, mac_str, role_str(d->role), state_color(d->state), state_str(d->state),
                COLOR_RESET, d->jamming ? COLOR_JAMMING : COLOR_RESET, d->jamming ? "true" : "false",
                COLOR_RESET);
     }
     pthread_mutex_unlock(&network->lock);
 
-    printf("\n[Up/Down] scroll  commands: help, scan, timeout, quit\n");
+    printf("\n[Up/Down] scroll  commands: help, scan, timeout, selfjam, quit\n");
     if (status_line[0] != '\0')
         printf("%s\n", status_line);
     printf("njamx> %s", input);
