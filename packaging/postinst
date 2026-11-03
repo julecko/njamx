@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+
+BIN="/usr/bin/njamx"
+
+if command -v setcap >/dev/null 2>&1; then
+    if setcap cap_net_raw+ep "$BIN"; then
+        echo "njamx: granted CAP_NET_RAW to $BIN (no sudo needed to run it)"
+    else
+        echo "njamx: could not set CAP_NET_RAW on $BIN; run njamx with sudo, or retry: sudo setcap cap_net_raw+ep $BIN" >&2
+    fi
+else
+    echo "njamx: 'setcap' not found (install libcap2-bin); run njamx with sudo, or install libcap2-bin and retry: sudo setcap cap_net_raw+ep $BIN" >&2
+fi
+
+exit 0

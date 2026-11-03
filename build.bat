@@ -7,6 +7,7 @@ set "EXEC_NAME=njamx"
 set "BUILD_TYPE=Debug"
 set "RUN_EXEC=0"
 set "RUN_ARGS="
+set "PACKAGE=0"
 
 
 REM Argument parsing
@@ -35,6 +36,12 @@ if /I "%~1"=="-r" (
 if /I "%~1"=="-c" (
     set "CHECK_ONLY=1"
     goto code_check
+)
+
+if /I "%~1"=="-p" (
+    set "PACKAGE=1"
+    shift
+    goto parse_args
 )
 
 REM Unknown argument
@@ -100,6 +107,32 @@ if errorlevel 1 (
 )
 
 
+REM Package
+
+if "%PACKAGE%"=="1" (
+    if /I not "%BUILD_TYPE%"=="Release" (
+        echo.
+        echo [WARN] Packaging a %BUILD_TYPE% build; consider --release -p for a distributable package.
+    )
+
+    where cpack >nul 2>&1
+    if errorlevel 1 (
+        echo [ERROR] cpack not found ^(needed for -p^)
+        exit /b 1
+    )
+
+    echo.
+    echo Packaging...
+    cpack --config "%BUILD_DIR%\CPackConfig.cmake" -B "%BUILD_DIR%"
+
+    if errorlevel 1 (
+        echo.
+        echo [ERROR] Packaging failed.
+        exit /b 1
+    )
+)
+
+
 REM Run
 
 if "%RUN_EXEC%"=="1" (
@@ -150,12 +183,13 @@ goto :eof
 REM --------------------------
 :usage
 echo.
-echo Usage: %~nx0 [-d] [--release] [-r [args]]
+echo Usage: %~nx0 [-d] [--release] [-r [args]] [-p]
 echo.
 echo    -d           Build in Debug mode (default)
 echo    --release    Build in Release mode
 echo    -r [args]    Run the executable after build with optional arguments
 echo    -c           Run Cppcheck only, do not build
+echo    -p           Build a distributable package (NSIS installer) after building
 echo.
 exit /b 1
 

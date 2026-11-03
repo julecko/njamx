@@ -175,3 +175,70 @@ else() # GCC / Clang
     )
 
 endif()
+
+# ==============================
+# Packaging (cpack)
+# ==============================
+
+include(GNUInstallDirs)
+
+if(WIN32)
+    install(TARGETS njamx RUNTIME DESTINATION .)
+
+    # Npcap can't be redistributed as a library dependency (no Debian-style
+    # package manager on Windows), so the installer bundles Npcap's own
+    # installer and runs it silently after copying njamx's files, same as
+    # the SDK zip above is fetched from npcap.com on first configure.
+    set(NPCAP_INSTALLER_URL "https://npcap.com/dist/npcap-1.88.exe" CACHE STRING
+        "URL of the Npcap installer to bundle with the njamx installer")
+    set(NPCAP_INSTALLER_EXE "${CMAKE_BINARY_DIR}/npcap-installer.exe")
+    if (NOT EXISTS "${NPCAP_INSTALLER_EXE}")
+        message(STATUS "Downloading Npcap installer from ${NPCAP_INSTALLER_URL} ...")
+        file(DOWNLOAD "${NPCAP_INSTALLER_URL}" "${NPCAP_INSTALLER_EXE}" STATUS NPCAP_EXE_DL_STATUS)
+        list(GET NPCAP_EXE_DL_STATUS 0 NPCAP_EXE_DL_CODE)
+        if (NOT NPCAP_EXE_DL_CODE EQUAL 0)
+            file(REMOVE "${NPCAP_INSTALLER_EXE}")
+            message(WARNING
+                "Could not download the Npcap installer automatically (it "
+                "gets a new version number periodically - check "
+                "https://npcap.com/dist/ and update NPCAP_INSTALLER_URL). "
+                "The generated njamx installer will not bundle it, so Npcap "
+                "must already be installed on the target machine.")
+        endif()
+    endif()
+
+    if (EXISTS "${NPCAP_INSTALLER_EXE}")
+        install(FILES "${NPCAP_INSTALLER_EXE}" DESTINATION .)
+    endif()
+
+    set(CPACK_GENERATOR "NSIS")
+    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+    set(CPACK_PACKAGE_EXECUTABLES "njamx;njamx")
+    # Silently (re)installs/updates Npcap right after njamx's own files
+    # land. Npcap's installer no-ops safely if an up to date copy is
+    # already present.
+    set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
+        "ExecWait '\\\"$INSTDIR\\\\npcap-installer.exe\\\" /S'"
+    )
+else()
+    install(TARGETS njamx RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "net")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libcap2-bin")
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    set(CPACK_DEBIAN_PACKAGE_DESCRIPTION
+        "njamx - ARP-based LAN device scanner and jammer\nRequires the libcap2-bin 'setcap' tool, applied automatically by this package's postinst script so njamx can send/receive raw packets without running as root."
+    )
+    # Grants CAP_NET_RAW to the installed binary so it doesn't need sudo
+    # every run; see tools/privileges.c, which checks for it at startup.
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_SOURCE_DIR}/packaging/postinst")
+endif()
+
+set(CPACK_PACKAGE_NAME "njamx")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_CONTACT "Julecko")
+set(CPACK_PACKAGE_VENDOR "Julecko")
+
+include(CPack)

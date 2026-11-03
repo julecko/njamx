@@ -12,12 +12,13 @@ die() {
 
 usage() {
     echo
-    echo "Usage: $0 [-d] [--release] [-r [args]]"
+    echo "Usage: $0 [-d] [--release] [-r [args]] [-p]"
     echo
     echo "  -d           Build in Debug mode (default)"
     echo "  --release    Build in Release mode"
     echo "  -r [args]    Run the executable after build with optional arguments"
     echo "  -c           Run Cppcheck only"
+    echo "  -p           Build a distributable package (.deb) after building"
     echo
 }
 
@@ -50,6 +51,7 @@ run_cppcheck() {
 # Defaults
 BUILD_TYPE="Debug"
 RUN_EXEC=0
+PACKAGE=0
 EXEC_NAME="njamx"
 RUN_ARGS=()
 
@@ -75,6 +77,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -c)
             run_cppcheck
+            ;;
+        -p)
+            PACKAGE=1
+            shift
             ;;
         *)
             echo "Unknown argument: $1"
@@ -113,6 +119,21 @@ echo
 echo "Building..."
 "${AS_BUILD_USER[@]}" cmake --build "$BUILD_DIR" --config "$BUILD_TYPE" \
     || die "Build failed"
+
+# Package
+if [[ $PACKAGE -eq 1 ]]; then
+    if [[ "$BUILD_TYPE" != "Release" ]]; then
+        echo
+        echo "[WARN] Packaging a $BUILD_TYPE build; consider --release -p for a distributable package."
+    fi
+
+    command -v cpack >/dev/null 2>&1 || die "cpack not found (needed for -p)"
+
+    echo
+    echo "Packaging..."
+    "${AS_BUILD_USER[@]}" cpack --config "$BUILD_DIR/CPackConfig.cmake" -B "$BUILD_DIR" \
+        || die "Packaging failed"
+fi
 
 # Run
 if [[ $RUN_EXEC -eq 1 ]]; then
