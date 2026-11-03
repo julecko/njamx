@@ -2,26 +2,37 @@
 
 #include <string.h>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <arpa/inet.h>
-#include <netinet/if_ether.h>
+#endif
 
-#include <net/ethernet.h>
-
+#include "network/eth_arp.h"
 #include "socket.h"
 
 static const uint8_t BROADCAST[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
+#if defined(_MSC_VER)
+#pragma pack(push, 1)
 struct arp_frame {
-    struct ether_header eth;
-    struct ether_arp arp;
+    eth_header_t eth;
+    arp_header_t arp;
+};
+#pragma pack(pop)
+#else
+struct arp_frame {
+    eth_header_t eth;
+    arp_header_t arp;
 } __attribute__((packed));
+#endif
 
 static void arp_header_common(struct arp_frame *f, uint16_t op) {
-    f->arp.ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
-    f->arp.ea_hdr.ar_pro = htons(ETH_P_IP);
-    f->arp.ea_hdr.ar_hln = 6;
-    f->arp.ea_hdr.ar_pln = 4;
-    f->arp.ea_hdr.ar_op = htons(op);
+    f->arp.ar_hrd = htons(ARPHRD_ETHER);
+    f->arp.ar_pro = htons(ETHERTYPE_IP);
+    f->arp.ar_hln = 6;
+    f->arp.ar_pln = 4;
+    f->arp.ar_op = htons(op);
 }
 
 int arp_send_request(const network_socket_t *s, const uint8_t src_mac[6], uint32_t src_ip,
@@ -30,7 +41,7 @@ int arp_send_request(const network_socket_t *s, const uint8_t src_mac[6], uint32
 
     memcpy(f.eth.ether_dhost, BROADCAST, 6);
     memcpy(f.eth.ether_shost, src_mac, 6);
-    f.eth.ether_type = htons(ETH_P_ARP);
+    f.eth.ether_type = htons(ETHERTYPE_ARP);
 
     arp_header_common(&f, ARPOP_REQUEST);
     memcpy(f.arp.arp_sha, src_mac, 6);
@@ -47,7 +58,7 @@ int arp_send_reply(const network_socket_t *s, const uint8_t dst_mac[6], const ui
 
     memcpy(f.eth.ether_dhost, dst_mac, 6);
     memcpy(f.eth.ether_shost, sender_mac, 6);
-    f.eth.ether_type = htons(ETH_P_ARP);
+    f.eth.ether_type = htons(ETHERTYPE_ARP);
 
     arp_header_common(&f, ARPOP_REPLY);
     memcpy(f.arp.arp_sha, sender_mac, 6);
@@ -64,7 +75,7 @@ int arp_wait_reply(const network_socket_t *s, uint32_t target_ip, uint8_t reply_
         ssize_t n = network_socket_recv(s, &f, sizeof(f));
         if (n < (ssize_t)sizeof(f))
             return -1;
-        if (ntohs(f.arp.ea_hdr.ar_op) != ARPOP_REPLY)
+        if (ntohs(f.arp.ar_op) != ARPOP_REPLY)
             continue;
         if (memcmp(f.arp.arp_spa, &target_ip, 4) != 0)
             continue;
@@ -79,7 +90,7 @@ int arp_recv_reply(const network_socket_t *s, uint32_t *sender_ip, uint8_t sende
         ssize_t n = network_socket_recv(s, &f, sizeof(f));
         if (n < (ssize_t)sizeof(f))
             return -1;
-        if (ntohs(f.arp.ea_hdr.ar_op) != ARPOP_REPLY)
+        if (ntohs(f.arp.ar_op) != ARPOP_REPLY)
             continue;
 
         uint32_t raw_ip;

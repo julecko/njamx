@@ -4,14 +4,18 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <arpa/inet.h>
-#include <pthread.h>
-#include <unistd.h>
+#endif
 
 #include "./network/arp.h"
 #include "./network/network.h"
 #include "network/device.h"
 #include "network/forgery.h"
+#include "platform/compat.h"
+#include "platform/thread_compat.h"
 
 void *jammer_process(void *arg) {
     jammer_args_t *args = (jammer_args_t *)arg;
@@ -58,7 +62,7 @@ void *jammer_process(void *arg) {
         }
         pthread_mutex_unlock(&network->lock);
 
-        sleep(2);
+        platform_sleep_sec(2);
     }
     return NULL;
 }

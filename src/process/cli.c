@@ -6,12 +6,28 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+
+#include <fcntl.h>
+#include <io.h>
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+#define STDIN_FILENO 0
+#define STDOUT_FILENO 1
+#define read _read
+
+#else
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
 #include <termios.h>
+
+#endif
 
 #include "network/device.h"
 #include "process/cli_commands.h"
@@ -30,6 +46,62 @@
 
 #define INPUT_MAX 256
 #define STATUS_MAX 256
+
+#ifdef _WIN32
+
+static HANDLE win_stdin;
+static HANDLE win_stdout;
+static DWORD orig_in_mode;
+static DWORD orig_out_mode;
+static int orig_stdin_textmode;
+
+static void disable_raw_mode(void) {
+    SetConsoleMode(win_stdin, orig_in_mode);
+    SetConsoleMode(win_stdout, orig_out_mode);
+    _setmode(_fileno(stdin), orig_stdin_textmode);
+    printf(EXIT_ALTERNATE_SCREEN_CODE);
+    fflush(stdout);
+}
+
+static void enable_raw_mode(void) {
+    win_stdin = GetStdHandle(STD_INPUT_HANDLE);
+    win_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    GetConsoleMode(win_stdin, &orig_in_mode);
+    GetConsoleMode(win_stdout, &orig_out_mode);
+    atexit(disable_raw_mode);
+
+    // stdin defaults to text mode, where the CRT buffers a lone '\r'
+    // to see whether a '\n' follows before releasing it to _read() -
+    // without this, pressing Enter once does nothing and a second
+    // press is needed to flush the first.
+    orig_stdin_textmode = _setmode(_fileno(stdin), _O_BINARY);
+
+    // ENABLE_VIRTUAL_TERMINAL_INPUT makes the console feed back arrow
+    // keys etc. as the same \x1b[... sequences used on POSIX, so the
+    // rest of this file's input parsing works unmodified.
+    DWORD raw_in = orig_in_mode;
+    raw_in &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
+    raw_in |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+    SetConsoleMode(win_stdin, raw_in);
+
+    SetConsoleMode(win_stdout, orig_out_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    printf(ALTERNATE_SCREEN_CODE);
+    fflush(stdout);
+}
+
+static size_t get_visible_rows(void) {
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    if (GetConsoleScreenBufferInfo(win_stdout, &info)) {
+        size_t rows = (size_t)(info.srWindow.Bottom - info.srWindow.Top + 1);
+        if (rows > 6)
+            return rows - 6;
+    }
+    return 20;
+}
+
+#else
 
 static struct termios orig_termios;
 
@@ -59,6 +131,8 @@ static size_t get_visible_rows(void) {
         return ws.ws_row - 6;
     return 20;
 }
+
+#endif
 
 static const char *ip_color(device_role_t role) {
     return role == DEVICE_ROLE_ROUTER ? COLOR_IP_ROUTER : COLOR_IP_CLIENT;

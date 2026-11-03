@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.18)
 
 # When stable set project version to 1.0.0
 project(njamx VERSION 0.0.0 LANGUAGES C CXX)
@@ -24,13 +24,31 @@ if (CMAKE_CXX_COMPILER)
 endif()
 
 if(WIN32)
-    #find_package(unofficial-sodium CONFIG REQUIRED)
-    #find_package(FLTK CONFIG REQUIRED)
+    # Npcap's SDK (headers + wpcap.lib/Packet.lib) can't be redistributed
+    # via vcpkg/apt due to its license, so it's fetched directly from
+    # npcap.com the first time, same as the well-known FindPCAP.cmake
+    # convention used by tcpdump/Wireshark (PCAP_ROOT-style layout).
+    set(NPCAP_SDK_DIR "${CMAKE_SOURCE_DIR}/third_party/npcap-sdk" CACHE PATH
+        "Path to an extracted Npcap SDK (Include/ and Lib/ subfolders)")
+
+    if (NOT EXISTS "${NPCAP_SDK_DIR}/Include/pcap.h")
+        set(NPCAP_SDK_URL "https://npcap.com/dist/npcap-sdk-1.16.zip")
+        set(NPCAP_SDK_ZIP "${CMAKE_BINARY_DIR}/npcap-sdk.zip")
+        message(STATUS "Npcap SDK not found at ${NPCAP_SDK_DIR}, downloading from ${NPCAP_SDK_URL} ...")
+        file(DOWNLOAD "${NPCAP_SDK_URL}" "${NPCAP_SDK_ZIP}" STATUS NPCAP_DL_STATUS)
+        list(GET NPCAP_DL_STATUS 0 NPCAP_DL_CODE)
+        if (NOT NPCAP_DL_CODE EQUAL 0)
+            message(FATAL_ERROR
+                "Could not download the Npcap SDK automatically. Download it "
+                "yourself from https://npcap.com/#download and extract it to "
+                "${NPCAP_SDK_DIR}, or point -DNPCAP_SDK_DIR=... at an existing copy.")
+        endif()
+        file(ARCHIVE_EXTRACT INPUT "${NPCAP_SDK_ZIP}" DESTINATION "${NPCAP_SDK_DIR}")
+    endif()
 else()
-    #find_package(FLTK REQUIRED)
-    #find_package(PkgConfig REQUIRED)
-    #pkg_check_modules(SODIUM REQUIRED libsodium)
     find_package(Threads REQUIRED)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(PCAP REQUIRED libpcap)
 endif()
 
 set(SOURCES)
@@ -51,6 +69,11 @@ if (CMAKE_C_COMPILER)
         src/process/jammer.c
         src/tools/mac_change.c
     )
+    if (WIN32)
+        list(APPEND SOURCES
+            src/platform/win_adapter.c
+        )
+    endif()
 endif()
 
 if (CMAKE_CXX_COMPILER)
@@ -70,15 +93,12 @@ add_executable(njamx ${SOURCES})
 set_target_properties(njamx PROPERTIES OUTPUT_NAME ${EXECUTABLE_OUTPUT_NAME})
 
 if(WIN32)
-    #set_target_properties(njamx PROPERTIES WIN32_EXECUTABLE TRUE)
-endif()
-
-if(WIN32)
-    #target_link_libraries(njamx PRIVATE unofficial-sodium::sodium)
+    target_include_directories(njamx PRIVATE "${NPCAP_SDK_DIR}/Include")
+    target_link_directories(njamx PRIVATE "${NPCAP_SDK_DIR}/Lib/x64")
+    target_link_libraries(njamx PRIVATE wpcap Packet ws2_32 iphlpapi)
 else()
-    #target_include_directories(njamx PRIVATE ${SODIUM_INCLUDE_DIRS})
-    #target_link_libraries(njamx PRIVATE ${SODIUM_LIBRARIES})
-    target_link_libraries(njamx PRIVATE Threads::Threads)
+    target_include_directories(njamx PRIVATE ${PCAP_INCLUDE_DIRS})
+    target_link_libraries(njamx PRIVATE ${PCAP_LIBRARIES} Threads::Threads)
 endif()
 
 target_include_directories(njamx PRIVATE
@@ -89,11 +109,24 @@ target_compile_definitions(njamx PRIVATE
     NJAMX_VERSION=\"${PROJECT_VERSION}\"
 )
 
+if(WIN32)
+    target_compile_definitions(njamx PRIVATE
+        WIN32_LEAN_AND_MEAN
+        NOMINMAX
+        _CRT_SECURE_NO_WARNINGS
+    )
+endif()
+
 # ==============================
 # Compiler-specific configuration
 # ==============================
 
 if (MSVC)
+
+    # C11 stdatomic.h support is opt-in on MSVC.
+    target_compile_options(njamx PRIVATE
+        $<$<COMPILE_LANGUAGE:C>:/experimental:c11atomics>
+    )
 
     # Debug
     target_compile_options(njamx PRIVATE

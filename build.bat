@@ -46,10 +46,12 @@ REM Collect remaining args for runtime
 
 if "%~1"=="" goto build
 
+REM Use %1 (not %~1) so a quoted multi-word argument (e.g. an adapter
+REM name with spaces) keeps its quotes when RUN_ARGS is expanded later.
 if defined RUN_ARGS (
-    set "RUN_ARGS=!RUN_ARGS! %~1"
+    set "RUN_ARGS=!RUN_ARGS! %1"
 ) else (
-    set "RUN_ARGS=%~1"
+    set "RUN_ARGS=%1"
 )
 shift
 goto collect_run_args

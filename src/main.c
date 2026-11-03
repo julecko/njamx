@@ -6,24 +6,34 @@
 #include <string.h>
 #include <time.h>
 
-#include <pthread.h>
-#include <unistd.h>
-
-#include <linux/if_ether.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
 
 #include "cli_args.h"
 #include "network/device.h"
+#include "network/eth_arp.h"
 #include "network/forgery.h"
 #include "network/iface.h"
 #include "network/network.h"
 #include "network/scanner.h"
 #include "network/socket.h"
+#include "platform/compat.h"
+#include "platform/thread_compat.h"
 #include "process/cli.h"
 #include "process/jammer.h"
 #include "tools/mac_change.h"
 #include "version.h"
 
 int main(int argc, char *argv[]) {
+#ifdef _WIN32
+    WSADATA wsa_data;
+    if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0) {
+        fprintf(stderr, "WSAStartup failed\n");
+        return 1;
+    }
+#endif
+
     cli_args_t args = cli_args_parse(argc, argv);
 
 #ifdef DEBUG_MODE
@@ -59,7 +69,7 @@ int main(int argc, char *argv[]) {
 
         printf("New mac address is: %02x:%02x:%02x:%02x:%02x:%02x\n", program_mac[0],
                program_mac[1], program_mac[2], program_mac[3], program_mac[4], program_mac[5]);
-        sleep(2);
+        platform_sleep_sec(2);
     } else {
         memcpy(program_mac, my_mac, 6);
     }
@@ -74,7 +84,7 @@ int main(int argc, char *argv[]) {
     }
 
     network_socket_t sock;
-    if (network_socket_open(&sock, args.interface, ETH_P_ARP, 1) < 0) {
+    if (network_socket_open(&sock, args.interface, ETHERTYPE_ARP, 1) < 0) {
         network_delete(&network);
         return 1;
     }

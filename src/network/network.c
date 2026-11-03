@@ -7,13 +7,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#endif
 
 #include "network/device.h"
 
 network_t network_create(const char *ip_with_mask) {
     network_t network = {0};
+    pthread_mutex_init(&network.lock, NULL);
+
     const char *slash = strchr(ip_with_mask, '/');
     if (!slash) {
         fprintf(stderr, "Slash was not found in IP\n");
@@ -81,4 +88,5 @@ void network_delete(network_t *network) {
     }
     network->length = 0;
     pthread_mutex_unlock(&network->lock);
+    pthread_mutex_destroy(&network->lock);
 }
