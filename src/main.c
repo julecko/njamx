@@ -75,9 +75,17 @@ int main(int argc, char *argv[]) {
 
         network_forgery_mac(program_mac);
         if (mac_change_set(args.interface, program_mac) < 0) {
+#ifdef _WIN32
+            fprintf(stderr,
+                    "Could not change MAC address on '%s' (run from an elevated/Administrator "
+                    "terminal, and make sure the adapter's driver supports the NetworkAddress "
+                    "override)\n",
+                    args.interface);
+#else
             fprintf(stderr,
                     "Could not change MAC address on '%s' (needs CAP_NET_ADMIN or root)\n",
                     args.interface);
+#endif
             return 1;
         }
 
