@@ -74,7 +74,12 @@ int main(int argc, char *argv[]) {
                my_mac[2], my_mac[3], my_mac[4], my_mac[5]);
 
         network_forgery_mac(program_mac);
-        mac_change_set(args.interface, program_mac);
+        if (mac_change_set(args.interface, program_mac) < 0) {
+            fprintf(stderr,
+                    "Could not change MAC address on '%s' (needs CAP_NET_ADMIN or root)\n",
+                    args.interface);
+            return 1;
+        }
 
         printf("New mac address is: %02x:%02x:%02x:%02x:%02x:%02x\n", program_mac[0],
                program_mac[1], program_mac[2], program_mac[3], program_mac[4], program_mac[5]);
@@ -91,6 +96,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Network initialization went wrong\n");
         return 1;
     }
+    network_set_my_mac(&network, program_mac);
 
     network_socket_t sock;
     if (network_socket_open(&sock, args.interface, ETHERTYPE_ARP, 1) < 0) {

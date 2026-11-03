@@ -77,6 +77,7 @@ network_t network_create(const char *ip_with_mask) {
         network.devices[i] = network_device_create(n);
         if (n == ip_host) {
             network.devices[i].flags |= DEVICE_FLAG_MY_DEVICE;
+            network.devices[i].state = DEVICE_STATE_ALIVE;
         }
     }
     printf("Network len: %" PRIu64 "\n", network_len);
@@ -92,4 +93,15 @@ void network_delete(network_t *network) {
     network->length = 0;
     pthread_mutex_unlock(&network->lock);
     pthread_mutex_destroy(&network->lock);
+}
+
+void network_set_my_mac(network_t *network, const uint8_t mac[6]) {
+    pthread_mutex_lock(&network->lock);
+    for (size_t i = 0; i < network->length; i++) {
+        if (network->devices[i].flags & DEVICE_FLAG_MY_DEVICE) {
+            memcpy(network->devices[i].mac, mac, 6);
+            break;
+        }
+    }
+    pthread_mutex_unlock(&network->lock);
 }

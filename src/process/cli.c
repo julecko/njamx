@@ -179,7 +179,8 @@ static size_t collect_visible(network_t *network, size_t *out) {
     size_t count = 0;
     pthread_mutex_lock(&network->lock);
     for (size_t i = 0; i < network->length; i++) {
-        if (network->devices[i].state != DEVICE_STATE_DEAD || network->devices[i].jamming) {
+        device_t *d = &network->devices[i];
+        if (d->state != DEVICE_STATE_DEAD || d->jamming || (d->flags & DEVICE_FLAG_MY_DEVICE)) {
             out[count++] = i;
         }
     }
@@ -207,11 +208,7 @@ static void draw(network_t *network, const size_t *visible, size_t visible_count
         snprintf(mac_str, sizeof(mac_str), "%02x:%02x:%02x:%02x:%02x:%02x", d->mac[0], d->mac[1],
                  d->mac[2], d->mac[3], d->mac[4], d->mac[5]);
 
-        char ip_label[INET_ADDRSTRLEN + 8];
-        snprintf(ip_label, sizeof(ip_label), "%s%s", ip_str,
-                 (d->flags & DEVICE_FLAG_MY_DEVICE) ? " (you)" : "");
-
-        printf("%-5zu %s%-16s%s %-18s %-8s %s%-14s%s %s%s%s\n", k + 1, ip_color(d), ip_label,
+        printf("%-5zu %s%-16s%s %-18s %-8s %s%-14s%s %s%s%s\n", k + 1, ip_color(d), ip_str,
                COLOR_RESET, mac_str, role_str(d->role), state_color(d->state), state_str(d->state),
                COLOR_RESET, d->jamming ? COLOR_JAMMING : COLOR_RESET, d->jamming ? "true" : "false",
                COLOR_RESET);

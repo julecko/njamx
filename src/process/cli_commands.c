@@ -70,7 +70,8 @@ static void cmd_scan(const char *args, cli_context_t *ctx, char *status_line, si
     pthread_mutex_lock(&ctx->network->lock);
     for (size_t i = 0; i < ctx->network->length; i++) {
         device_t *device = &ctx->network->devices[i];
-        if (device->state != DEVICE_STATE_ADDED && device->role != DEVICE_ROLE_ROUTER) {
+        if (device->state != DEVICE_STATE_ADDED && device->role != DEVICE_ROLE_ROUTER &&
+            !(device->flags & DEVICE_FLAG_MY_DEVICE)) {
             device->state = DEVICE_STATE_DEAD;
         }
     }

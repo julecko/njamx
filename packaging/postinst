@@ -3,14 +3,50 @@ set -e
 
 BIN="/usr/bin/njamx"
 
-if command -v setcap >/dev/null 2>&1; then
-    if setcap cap_net_raw+ep "$BIN"; then
-        echo "njamx: granted CAP_NET_RAW to $BIN (no sudo needed to run it)"
-    else
-        echo "njamx: could not set CAP_NET_RAW on $BIN; run njamx with sudo, or retry: sudo setcap cap_net_raw+ep $BIN" >&2
-    fi
-else
+# njamx only strictly needs CAP_NET_RAW (checked at startup by
+# tools/privileges.c). CAP_NET_ADMIN additionally lets libpcap put the
+# interface into promiscuous mode (can surface more devices while
+# scanning) and lets --change-mac actually change the interface's MAC -
+# optional, so ask rather than granting it silently.
+ask_grant_net_admin() {
+    # dpkg normally redirects postinst's own stdin, so ask on the
+    # controlling terminal directly. If there isn't one (unattended
+    # install, CI, docker build...), fail quietly rather than hang or
+    # spam the log with "cannot open /dev/tty" noise - both commands are
+    # grouped so a mid-group failure (e.g. the printf's own redirect)
+    # doesn't abort under set -e before the group's result is tested.
+    answer=""
+    {
+        printf 'njamx: also grant CAP_NET_ADMIN? Needed for --change-mac, and for promiscuous-mode capture (may find more devices while scanning). [y/N] ' > /dev/tty
+        read -r answer < /dev/tty
+    } 2>/dev/null || return 1
+
+    case "$answer" in
+        [yY]*)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+if ! command -v setcap >/dev/null 2>&1; then
     echo "njamx: 'setcap' not found (install libcap2-bin); run njamx with sudo, or install libcap2-bin and retry: sudo setcap cap_net_raw+ep $BIN" >&2
+    exit 0
+fi
+
+if ask_grant_net_admin; then
+    CAPS="cap_net_raw,cap_net_admin+ep"
+else
+    CAPS="cap_net_raw+ep"
+    echo "njamx: granting CAP_NET_RAW only. --change-mac and promiscuous-mode capture need CAP_NET_ADMIN too - run njamx with sudo yourself if you need them, or grant it: sudo setcap cap_net_raw,cap_net_admin+ep $BIN"
+fi
+
+if setcap "$CAPS" "$BIN"; then
+    echo "njamx: granted ${CAPS%%+*} to $BIN (no sudo needed to run it)"
+else
+    echo "njamx: could not set capabilities on $BIN; run njamx with sudo, or retry: sudo setcap $CAPS $BIN" >&2
 fi
 
 exit 0

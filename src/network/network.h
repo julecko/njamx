@@ -26,6 +26,16 @@ network_t network_create(const char *ip_with_mask);
 
 void network_delete(network_t *network);
 
+/**
+ * @brief Set the MAC address on the device flagged DEVICE_FLAG_MY_DEVICE
+ *        (a no-op if, somehow, none is flagged).
+ *
+ * @param network Network to update.
+ * @param mac     MAC currently in use on the interface (the forged one
+ *                if --change-mac is active, the real one otherwise).
+ */
+void network_set_my_mac(network_t *network, const uint8_t mac[6]);
+
 static inline uint32_t network_get_network_ip(network_t *network) {
     return network->my_ip & network->mask;
 }
