@@ -68,6 +68,7 @@ if (CMAKE_C_COMPILER)
         src/process/cli_commands.c
         src/process/jammer.c
         src/tools/mac_change.c
+        src/tools/privileges.c
     )
     if (WIN32)
         list(APPEND SOURCES

@@ -23,6 +23,7 @@
 #include "process/cli.h"
 #include "process/jammer.h"
 #include "tools/mac_change.h"
+#include "tools/privileges.h"
 #include "version.h"
 
 int main(int argc, char *argv[]) {
@@ -49,6 +50,14 @@ int main(int argc, char *argv[]) {
             return 1;
         case CLI_ARGS_SUCCESS:
             break;
+    }
+
+    if (!privileges_has_raw_capture()) {
+        fprintf(stderr,
+                "njamx needs root or the CAP_NET_RAW capability (raw packet capture/injection).\n"
+                "Run with sudo, or: sudo setcap cap_net_raw+ep %s\n",
+                argv[0]);
+        return 1;
     }
 
     srand((unsigned int)time(NULL));
