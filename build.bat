@@ -115,15 +115,9 @@ if "%PACKAGE%"=="1" (
         echo [WARN] Packaging a %BUILD_TYPE% build; consider --release -p for a distributable package.
     )
 
-    where cpack >nul 2>&1
-    if errorlevel 1 (
-        echo [ERROR] cpack not found ^(needed for -p^)
-        exit /b 1
-    )
-
     echo.
     echo Packaging...
-    cpack --config "%BUILD_DIR%\CPackConfig.cmake" -B "%BUILD_DIR%"
+    cmake --build "%BUILD_DIR%" --config %BUILD_TYPE% --target installer
 
     if errorlevel 1 (
         echo.

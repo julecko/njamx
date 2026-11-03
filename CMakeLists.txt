@@ -187,8 +187,8 @@ if(WIN32)
 
     # Npcap can't be redistributed as a library dependency (no Debian-style
     # package manager on Windows), so the installer bundles Npcap's own
-    # installer and runs it silently after copying njamx's files, same as
-    # the SDK zip above is fetched from npcap.com on first configure.
+    # installer and runs it, same as the SDK zip above is fetched from
+    # npcap.com on first configure.
     set(NPCAP_INSTALLER_URL "https://npcap.com/dist/npcap-1.88.exe" CACHE STRING
         "URL of the Npcap installer to bundle with the njamx installer")
     set(NPCAP_INSTALLER_EXE "${CMAKE_BINARY_DIR}/npcap-installer.exe")
@@ -207,43 +207,42 @@ if(WIN32)
         endif()
     endif()
 
-    if (EXISTS "${NPCAP_INSTALLER_EXE}")
-        install(FILES "${NPCAP_INSTALLER_EXE}" DESTINATION .)
-    endif()
+    # CPack's NSIS generator can't do a real "install for me / install for
+    # everyone / pick my own folder" choice at install time (that needs
+    # NSIS's MultiUser.nsh, which has no CPACK_NSIS_* hook), nor a custom
+    # "add to PATH, and for whom" page, so packaging/windows/installer.nsi
+    # is a hand-written NSIS script instead, built via this target rather
+    # than through `cpack`.
+    find_program(NJAMX_MAKENSIS makensis
+        PATHS "$ENV{ProgramFiles}/NSIS" "$ENV{ProgramFiles\(x86\)}/NSIS")
 
-    # CPack's NSIS generator has no built-in "install for me only" vs
-    # "install for all users" page (that needs NSIS's MultiUser.nsh,
-    # which isn't exposed through any documented CPACK_NSIS_* hook), so
-    # this is a configure-time choice between two installer builds
-    # rather than a radio button inside one of them.
-    option(NJAMX_NSIS_ALL_USERS
-        "Build the njamx installer for all users (Program Files, needs admin) instead of the current user only (no admin needed)"
-        OFF)
-
-    if (NJAMX_NSIS_ALL_USERS)
-        set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
-        # Per-user (the default) never needs elevation; only request it
-        # here, since writing under Program Files does.
-        set(CPACK_NSIS_DEFINES "RequestExecutionLevel admin")
+    if (NJAMX_MAKENSIS AND EXISTS "${NPCAP_INSTALLER_EXE}")
+        set(NJAMX_INSTALLER_OUT "${CMAKE_BINARY_DIR}/njamx-${PROJECT_VERSION}-setup.exe")
+        # NSIS's File instruction doesn't recognize CMake's forward-slash
+        # paths as absolute, so these need converting to backslash form
+        # ($<TARGET_FILE:...> can only be resolved this late, at build
+        # time, so that conversion has to be a generator expression too).
+        add_custom_target(installer
+            COMMAND "${NJAMX_MAKENSIS}"
+                "/DNJAMX_VERSION=${PROJECT_VERSION}"
+                "/DNJAMX_EXE=$<SHELL_PATH:$<TARGET_FILE:njamx>>"
+                "/DNJAMX_EXE_NAME=$<TARGET_FILE_NAME:njamx>"
+                "/DNJAMX_LICENSE=$<SHELL_PATH:${CMAKE_SOURCE_DIR}/LICENSE>"
+                "/DNJAMX_NPCAP_EXE=$<SHELL_PATH:${NPCAP_INSTALLER_EXE}>"
+                "/DNJAMX_OUT=$<SHELL_PATH:${NJAMX_INSTALLER_OUT}>"
+                "${CMAKE_SOURCE_DIR}/packaging/windows/installer.nsi"
+            DEPENDS njamx
+            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/packaging/windows"
+            COMMENT "Building ${NJAMX_INSTALLER_OUT}"
+            VERBATIM
+        )
     else()
-        set(CPACK_NSIS_INSTALL_ROOT "$LOCALAPPDATA\\\\Programs")
+        add_custom_target(installer
+            COMMAND "${CMAKE_COMMAND}" -E echo
+                "Can't build the installer: makensis not found and/or the Npcap installer wasn't downloaded (see the warnings above)."
+            COMMAND "${CMAKE_COMMAND}" -E false
+        )
     endif()
-
-    set(CPACK_GENERATOR "NSIS")
-    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
-    # Lets the installer ask the user whether njamx's folder should be
-    # added to PATH, instead of always doing it or never doing it.
-    set(CPACK_NSIS_MODIFY_PATH ON)
-    # Deliberately not setting CPACK_PACKAGE_EXECUTABLES: that's what
-    # makes CPack's NSIS template create Start Menu (and, transitively,
-    # desktop) shortcuts, which weren't asked for here.
-
-    # Silently (re)installs/updates Npcap right after njamx's own files
-    # land. Npcap's installer no-ops safely if an up to date copy is
-    # already present.
-    set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
-        "ExecWait '\\\"$INSTDIR\\\\npcap-installer.exe\\\" /S'"
-    )
 else()
     install(TARGETS njamx RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
@@ -262,12 +261,14 @@ endif()
 
 install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION "${CMAKE_INSTALL_DOCDIR}")
 
-set(CPACK_PACKAGE_NAME "njamx")
-set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_PACKAGE_CONTACT "Julecko")
-set(CPACK_PACKAGE_VENDOR "Julecko")
-# Shows as the installer's license-agreement page on NSIS; harmless
-# elsewhere (e.g. the DEB generator just ignores it).
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+# Windows packaging is the hand-written installer.nsi/`installer` target
+# above, not CPack, so this is Linux-only from here down.
+if (NOT WIN32)
+    set(CPACK_PACKAGE_NAME "njamx")
+    set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+    set(CPACK_PACKAGE_CONTACT "Julecko")
+    set(CPACK_PACKAGE_VENDOR "Julecko")
+    set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 
-include(CPack)
+    include(CPack)
+endif()

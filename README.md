@@ -52,3 +52,25 @@ On Windows there's no direct equivalent, so it writes the adapter's
 `NetworkAddress` registry override and cycles the adapter with `netsh`
 to apply it. This requires Administrator privileges and a NIC driver
 that honors the override (most Ethernet/Wi-Fi drivers do, some don't).
+
+## Packaging (`-p`)
+
+`./build.sh --release -p` / `.\build.bat --release -p` builds a
+distributable package after building:
+
+- **Linux**: a `.deb` (via CPack) whose postinstall script grants
+  `CAP_NET_RAW` (and, if you say yes when asked, `CAP_NET_ADMIN`) to the
+  installed binary with `setcap`, so it doesn't need `sudo` on every
+  run. Needs `cpack`.
+- **Windows**: an NSIS installer (`packaging/windows/installer.nsi`,
+  built directly with `makensis` - needs NSIS installed, not CPack's
+  NSIS generator, since that can't do what's described below). It:
+  - Lets you choose "install for me only" or "install for all users"
+    (the latter needs admin and elevates automatically), followed by
+    the normal browsable destination-folder page.
+  - Bundles and launches Npcap's own installer interactively (not
+    silently - Npcap's free license reserves unattended install for
+    its paid OEM tier).
+  - Asks whether to add njamx's folder to `PATH`, and if so, for your
+    account only or for all users (the latter only offered when
+    installing for all users). Removed again on uninstall.
