@@ -8,7 +8,6 @@
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Input.H>
 
-#include "process/cli.h"
 #include "process/cli_commands.h"
 #include "process/gui/device_table.hpp"
 #include "process/gui/packet_view.hpp"

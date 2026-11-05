@@ -173,21 +173,6 @@ static const char *state_color(device_state_t state) {
     return COLOR_RESET;
 }
 
-// Collects indices of every non-dead device into out (caller-sized to
-// network->length), returns how many were written.
-size_t cli_collect_visible(network_t *network, size_t *out) {
-    size_t count = 0;
-    pthread_mutex_lock(&network->lock);
-    for (size_t i = 0; i < network->length; i++) {
-        device_t *d = &network->devices[i];
-        if (d->state != DEVICE_STATE_DEAD || d->jamming || (d->flags & DEVICE_FLAG_MY_DEVICE)) {
-            out[count++] = i;
-        }
-    }
-    pthread_mutex_unlock(&network->lock);
-    return count;
-}
-
 static void draw(network_t *network, const size_t *visible, size_t visible_count, size_t offset,
                  size_t max_visible, const char *status_line, const char *input) {
     printf(TOP_LEFT_CODE CLEAR_SCREEN_CODE);

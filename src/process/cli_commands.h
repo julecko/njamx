@@ -44,6 +44,13 @@ typedef struct {
 void cli_run_command(const char *input, cli_context_t *ctx, char *status_line, size_t status_cap,
                       bool *should_quit);
 
+// Collects indices of every device worth showing (non-dead, jamming, or
+// flagged DEVICE_FLAG_MY_DEVICE) into out (caller-sized to
+// network->length). Returns how many were written. Shared by the
+// terminal UI (cli.c) and the GUI (process/gui/) so both list exactly
+// the same devices.
+size_t cli_collect_visible(network_t *network, size_t *out);
+
 #ifdef __cplusplus
 }
 #endif

@@ -432,6 +432,19 @@ static const cli_command_entry_t COMMANDS[] = {
 
 #define COMMAND_COUNT (sizeof(COMMANDS) / sizeof(COMMANDS[0]))
 
+size_t cli_collect_visible(network_t *network, size_t *out) {
+    size_t count = 0;
+    pthread_mutex_lock(&network->lock);
+    for (size_t i = 0; i < network->length; i++) {
+        device_t *d = &network->devices[i];
+        if (d->state != DEVICE_STATE_DEAD || d->jamming || (d->flags & DEVICE_FLAG_MY_DEVICE)) {
+            out[count++] = i;
+        }
+    }
+    pthread_mutex_unlock(&network->lock);
+    return count;
+}
+
 void cli_run_command(const char *input, cli_context_t *ctx, char *status_line, size_t status_cap,
                      bool *should_quit) {
     status_line[0] = '\0';

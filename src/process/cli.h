@@ -39,12 +39,6 @@ void cli_run(network_t *network, const network_socket_t *sock, runtime_options_t
 // "packets" view so both scroll consistently with the terminal size.
 size_t cli_get_visible_rows(void);
 
-// Collects indices of every device worth showing (non-dead, jamming, or
-// flagged DEVICE_FLAG_MY_DEVICE) into out (caller-sized to
-// network->length). Returns how many were written. Shared with gui.c so
-// both UIs list exactly the same devices.
-size_t cli_collect_visible(network_t *network, size_t *out);
-
 #ifdef __cplusplus
 }
 #endif
