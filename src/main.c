@@ -22,6 +22,9 @@
 #include "platform/compat.h"
 #include "platform/thread_compat.h"
 #include "process/cli.h"
+#ifdef NJAMX_HAVE_GUI
+#include "process/gui.h"
+#endif
 #include "process/jammer.h"
 #include "process/runtime_options.h"
 #include "tools/mac_change.h"
@@ -132,7 +135,15 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+#ifdef NJAMX_HAVE_GUI
+    if (args.flags & CLI_ARGS_FLAGS_GUI) {
+        gui_run(&network, &sock, &opts, &timeout_sec, &quit);
+    } else {
+        cli_run(&network, &sock, &opts, &timeout_sec, &quit);
+    }
+#else
     cli_run(&network, &sock, &opts, &timeout_sec, &quit);
+#endif
 
     printf("Cleaning up, can take up few seconds...\n");
     pthread_join(jammer_thread, NULL);

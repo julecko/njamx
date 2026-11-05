@@ -175,7 +175,7 @@ static const char *state_color(device_state_t state) {
 
 // Collects indices of every non-dead device into out (caller-sized to
 // network->length), returns how many were written.
-static size_t collect_visible(network_t *network, size_t *out) {
+size_t cli_collect_visible(network_t *network, size_t *out) {
     size_t count = 0;
     pthread_mutex_lock(&network->lock);
     for (size_t i = 0; i < network->length; i++) {
@@ -233,7 +233,7 @@ void cli_run(network_t *network, const network_socket_t *sock, runtime_options_t
 
     size_t max_visible = cli_get_visible_rows();
     size_t offset = 0;
-    size_t visible_count = collect_visible(network, visible);
+    size_t visible_count = cli_collect_visible(network, visible);
 
     char input[INPUT_MAX] = {0};
     size_t input_len = 0;
@@ -297,7 +297,7 @@ void cli_run(network_t *network, const network_socket_t *sock, runtime_options_t
             continue;
 
         max_visible = cli_get_visible_rows();
-        visible_count = collect_visible(network, visible);
+        visible_count = cli_collect_visible(network, visible);
         if (offset > 0 && offset + max_visible > visible_count) {
             offset = visible_count > max_visible ? visible_count - max_visible : 0;
         }

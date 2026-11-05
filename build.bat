@@ -3,11 +3,11 @@ setlocal EnableExtensions EnableDelayedExpansion
 
 REM Defaults
 
-set "EXEC_NAME=njamx"
 set "BUILD_TYPE=Debug"
 set "RUN_EXEC=0"
 set "RUN_ARGS="
 set "PACKAGE=0"
+set "BUILD_GUI=1"
 
 
 REM Argument parsing
@@ -44,6 +44,18 @@ if /I "%~1"=="-p" (
     goto parse_args
 )
 
+if /I "%~1"=="--gui" (
+    set "BUILD_GUI=1"
+    shift
+    goto parse_args
+)
+
+if /I "%~1"=="--no-gui" (
+    set "BUILD_GUI=0"
+    shift
+    goto parse_args
+)
+
 REM Unknown argument
 echo Unknown argument: %~1
 goto usage
@@ -70,6 +82,14 @@ REM Build
 
 set "BUILD_DIR=build"
 
+if "%BUILD_GUI%"=="1" (
+    set "EXEC_NAME=njamx"
+    set "NJAMX_BUILD_GUI_CMAKE=ON"
+) else (
+    set "EXEC_NAME=njamx-nogui"
+    set "NJAMX_BUILD_GUI_CMAKE=OFF"
+)
+
 call :setup_dev_env
 if errorlevel 1 exit /b 1
 
@@ -87,7 +107,8 @@ echo.
 echo Configuring (%BUILD_TYPE%)...
 cmake -G Ninja -S . -B "%BUILD_DIR%" ^
   -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
-  -DEXECUTABLE_OUTPUT_NAME=%EXEC_NAME%
+  -DEXECUTABLE_OUTPUT_NAME=%EXEC_NAME% ^
+  -DNJAMX_BUILD_GUI=%NJAMX_BUILD_GUI_CMAKE%
 
 if errorlevel 1 (
     echo.
@@ -177,13 +198,15 @@ goto :eof
 REM --------------------------
 :usage
 echo.
-echo Usage: %~nx0 [-d] [--release] [-r [args]] [-p]
+echo Usage: %~nx0 [-d] [--release] [-r [args]] [-p] [--gui^|--no-gui]
 echo.
 echo    -d           Build in Debug mode (default)
 echo    --release    Build in Release mode
 echo    -r [args]    Run the executable after build with optional arguments
 echo    -c           Run Cppcheck only, do not build
 echo    -p           Build a distributable package (NSIS installer) after building
+echo    --gui        Build with the raylib GUI (default); output: njamx.exe
+echo    --no-gui     Build without the GUI, no raylib dependency; output: njamx-nogui.exe
 echo.
 exit /b 1
 

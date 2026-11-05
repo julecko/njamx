@@ -12,13 +12,15 @@ die() {
 
 usage() {
     echo
-    echo "Usage: $0 [-d] [--release] [-r [args]] [-p]"
+    echo "Usage: $0 [-d] [--release] [-r [args]] [-p] [--gui|--no-gui]"
     echo
     echo "  -d           Build in Debug mode (default)"
     echo "  --release    Build in Release mode"
     echo "  -r [args]    Run the executable after build with optional arguments"
     echo "  -c           Run Cppcheck only"
     echo "  -p           Build a distributable package (.deb) after building"
+    echo "  --gui        Build with the raylib GUI (default); output: njamx"
+    echo "  --no-gui     Build without the GUI, no raylib dependency; output: njamx-nogui"
     echo
 }
 
@@ -52,7 +54,7 @@ run_cppcheck() {
 BUILD_TYPE="Debug"
 RUN_EXEC=0
 PACKAGE=0
-EXEC_NAME="njamx"
+BUILD_GUI=1
 RUN_ARGS=()
 
 # Argument parsing
@@ -82,6 +84,14 @@ while [[ $# -gt 0 ]]; do
             PACKAGE=1
             shift
             ;;
+        --gui)
+            BUILD_GUI=1
+            shift
+            ;;
+        --no-gui)
+            BUILD_GUI=0
+            shift
+            ;;
         *)
             echo "Unknown argument: $1"
             usage
@@ -92,6 +102,14 @@ done
 
 # Build
 BUILD_DIR="build"
+
+if [[ $BUILD_GUI -eq 1 ]]; then
+    EXEC_NAME="njamx"
+    NJAMX_BUILD_GUI_CMAKE="ON"
+else
+    EXEC_NAME="njamx-nogui"
+    NJAMX_BUILD_GUI_CMAKE="OFF"
+fi
 
 # If this script itself was launched via sudo (e.g. so the final run has
 # the privileges the raw-socket binary needs), don't let the actual
@@ -113,6 +131,7 @@ echo "Configuring ($BUILD_TYPE)..."
 "${AS_BUILD_USER[@]}" cmake -S . -B "$BUILD_DIR" \
     -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
     -DEXECUTABLE_OUTPUT_NAME="$EXEC_NAME" \
+    -DNJAMX_BUILD_GUI="$NJAMX_BUILD_GUI_CMAKE" \
     || die "CMake configuration failed"
 
 echo

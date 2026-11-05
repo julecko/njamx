@@ -51,6 +51,25 @@ else()
     pkg_check_modules(PCAP REQUIRED libpcap)
 endif()
 
+# Optional GUI (process/gui.c): a single raylib window driving the same
+# cli_run_command() dispatcher the terminal UI uses. raylib builds the
+# same way on every platform via CMake, so it's fetched from source
+# here instead of depending on a system package (there's no Windows
+# package manager to depend on anyway) - same approach as the Npcap SDK
+# above. Turn this off to build a GUI-free, raylib-free binary.
+option(NJAMX_BUILD_GUI "Build the raylib-based GUI (-g/--gui flag)" ON)
+
+if (NJAMX_BUILD_GUI)
+    include(FetchContent)
+    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(raylib
+        GIT_REPOSITORY https://github.com/raysan5/raylib.git
+        GIT_TAG 5.5
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(raylib)
+endif()
+
 set(SOURCES)
 
 if (CMAKE_C_COMPILER)
@@ -76,6 +95,9 @@ if (CMAKE_C_COMPILER)
         list(APPEND SOURCES
             src/platform/win_adapter.c
         )
+    endif()
+    if (NJAMX_BUILD_GUI)
+        list(APPEND SOURCES src/process/gui.c)
     endif()
 endif()
 
@@ -107,6 +129,12 @@ endif()
 target_include_directories(njamx PRIVATE
     ${PROJECT_SOURCE_DIR}/src
 )
+
+if (NJAMX_BUILD_GUI)
+    target_link_libraries(njamx PRIVATE raylib)
+    target_include_directories(njamx PRIVATE "${PROJECT_SOURCE_DIR}/third_party")
+    target_compile_definitions(njamx PRIVATE NJAMX_HAVE_GUI=1)
+endif()
 
 target_compile_definitions(njamx PRIVATE
     NJAMX_VERSION=\"${PROJECT_VERSION}\"

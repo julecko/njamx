@@ -15,6 +15,10 @@ void cli_args_print_usage(const char *prog_name, FILE *stream) {
     fprintf(stream,
             "  -R, --real-mac           Use the real/active MAC in forged ARP replies instead of "
             "a random one\n");
+#ifdef NJAMX_HAVE_GUI
+    fprintf(stream, "  -g, --gui                Launch the graphical interface instead of the "
+                    "terminal one\n");
+#endif
     fprintf(stream, "  -h, --help               Show this help message\n");
     fprintf(stream, "Examples: %s 10.10.10.1/23 -i eth0\n", prog_name);
 }
@@ -58,6 +62,11 @@ cli_args_t cli_args_parse(int argc, char *argv[]) {
         } else if (strcmp(arg, "-R") == 0 || strcmp(arg, "--real-mac") == 0) {
             args.flags |= CLI_ARGS_FLAGS_REAL_MAC;
             continue;
+#ifdef NJAMX_HAVE_GUI
+        } else if (strcmp(arg, "-g") == 0 || strcmp(arg, "--gui") == 0) {
+            args.flags |= CLI_ARGS_FLAGS_GUI;
+            continue;
+#endif
         } else if (strcmp(arg, "-t") == 0 || strcmp(arg, "--timeout") == 0) {
             if (i + 1 >= argc) {
                 fprintf(stderr, "Error: %s needs a value\n", arg);

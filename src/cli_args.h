@@ -16,6 +16,8 @@ typedef enum cli_flags {
     // Forged ARP replies (jamming) use the program's real/active MAC
     // instead of a freshly generated random one.
     CLI_ARGS_FLAGS_REAL_MAC = 1 << 1,
+    // Launch the raylib-based GUI instead of the terminal TUI.
+    CLI_ARGS_FLAGS_GUI = 1 << 2,
 } cli_flags_t;
 
 typedef struct cli_args {
