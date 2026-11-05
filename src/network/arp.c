@@ -1,9 +1,11 @@
 #include "arp.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #else
 #include <arpa/inet.h>
 #endif
@@ -99,4 +101,33 @@ int arp_recv_reply(const network_socket_t *s, uint32_t *sender_ip, uint8_t sende
         memcpy(sender_mac, f.arp.arp_sha, 6);
         return 0;
     }
+}
+
+static void format_mac(const uint8_t mac[6], char *out, size_t out_cap) {
+    snprintf(out, out_cap, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4],
+             mac[5]);
+}
+
+void arp_frame_describe(const uint8_t *frame, size_t len, char *out, size_t out_cap) {
+    if (len < sizeof(struct arp_frame)) {
+        snprintf(out, out_cap, "(truncated frame, %zu byte(s))", len);
+        return;
+    }
+    const struct arp_frame *f = (const struct arp_frame *)frame;
+
+    char sha[18], tha[18];
+    format_mac(f->arp.arp_sha, sha, sizeof(sha));
+    format_mac(f->arp.arp_tha, tha, sizeof(tha));
+
+    struct in_addr spa_addr, tpa_addr;
+    memcpy(&spa_addr, f->arp.arp_spa, 4);
+    memcpy(&tpa_addr, f->arp.arp_tpa, 4);
+    char spa[INET_ADDRSTRLEN], tpa[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &spa_addr, spa, sizeof(spa));
+    inet_ntop(AF_INET, &tpa_addr, tpa, sizeof(tpa));
+
+    uint16_t op = ntohs(f->arp.ar_op);
+    const char *op_str = op == ARPOP_REQUEST ? "request" : op == ARPOP_REPLY ? "reply" : "?";
+
+    snprintf(out, out_cap, "ARP %-7s  %s (%s)  ->  %s (%s)", op_str, sha, spa, tha, tpa);
 }

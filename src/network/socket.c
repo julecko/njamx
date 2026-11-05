@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "network/eth_arp.h"
+#include "network/packet_log.h"
 #include "platform/compat.h"
 
 #ifdef _WIN32
@@ -104,6 +105,7 @@ int network_socket_set_timeout(const network_socket_t *s, long sec, long usec) {
 ssize_t network_socket_send(const network_socket_t *s, const uint8_t dst_mac[6], const void *frame,
                             size_t len) {
     (void)dst_mac; // destination is already encoded in the frame's Ethernet header
+    packet_log_record(frame, len);
     if (pcap_sendpacket(s->handle, (const u_char *)frame, (int)len) != 0) {
         fprintf(stderr, "pcap_sendpacket: %s\n", pcap_geterr(s->handle));
         return -1;

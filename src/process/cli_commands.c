@@ -5,17 +5,27 @@
 #include <string.h>
 
 #ifdef _WIN32
+#include <io.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#define PACKET_VIEW_STDIN 0
+#define packet_view_read _read
 #else
+#include <unistd.h>
+
 #include <arpa/inet.h>
+#define PACKET_VIEW_STDIN STDIN_FILENO
+#define packet_view_read read
 #endif
 
+#include "network/arp.h"
 #include "network/device.h"
+#include "network/packet_log.h"
 #include "network/scanner.h"
 #include "platform/thread_compat.h"
 
 #define VERB_MAX 64
+#define PACKET_VIEW_CLEAR "\033[H\033[2J"
 
 typedef void (*cli_command_fn)(const char *args, cli_context_t *ctx, char *status_line,
                                size_t status_cap, bool *should_quit);
@@ -25,7 +35,41 @@ static void cmd_help(const char *args, cli_context_t *ctx, char *status_line, si
     (void)args;
     (void)ctx;
     (void)should_quit;
-    snprintf(status_line, status_cap, "Commands: help, scan, timeout, selfjam, quit/exit/q");
+    snprintf(status_line, status_cap, "Commands: help, scan, timeout, selfjam, packets, quit/exit/q");
+}
+
+static void cmd_packets(const char *args, cli_context_t *ctx, char *status_line, size_t status_cap,
+                        bool *should_quit) {
+    (void)args;
+    (void)ctx;
+    (void)should_quit;
+
+    packet_log_entry_t entries[PACKET_LOG_CAPACITY];
+    char line[256];
+
+    for (;;) {
+        size_t n = packet_log_snapshot(entries, PACKET_LOG_CAPACITY);
+
+        printf(PACKET_VIEW_CLEAR);
+        printf("njamx - last %zu packet(s) sent (press any key to refresh, q to return)\n\n", n);
+        if (n == 0) {
+            printf("(nothing sent yet)\n");
+        } else {
+            for (size_t i = 0; i < n; i++) {
+                arp_frame_describe(entries[i].data, entries[i].len, line, sizeof(line));
+                printf("%3zu. %s\n", i + 1, line);
+            }
+        }
+        fflush(stdout);
+
+        char c;
+        if (packet_view_read(PACKET_VIEW_STDIN, &c, 1) <= 0)
+            continue;
+        if (c == 'q' || c == 'Q' || c == '\x03')
+            break;
+    }
+
+    status_line[0] = '\0';
 }
 
 // Whether "all"/"armagedon" also jam our own device (flagged
@@ -264,10 +308,10 @@ typedef struct {
 
 static const cli_command_entry_t COMMANDS[] = {
     {"help", cmd_help},       {"scan", cmd_scan},       {"timeout", cmd_timeout},
-    {"selfjam", cmd_selfjam}, {"quit", cmd_quit},       {"exit", cmd_quit},
-    {"q", cmd_quit},          {"jam", cmd_jam},         {"router", cmd_router},
-    {"add", cmd_add},         {"remove", cmd_remove},   {"all", cmd_all},
-    {"none", cmd_none},       {"armagedon", cmd_armagedon}};
+    {"selfjam", cmd_selfjam}, {"packets", cmd_packets}, {"quit", cmd_quit},
+    {"exit", cmd_quit},       {"q", cmd_quit},          {"jam", cmd_jam},
+    {"router", cmd_router},   {"add", cmd_add},         {"remove", cmd_remove},
+    {"all", cmd_all},         {"none", cmd_none},       {"armagedon", cmd_armagedon}};
 
 #define COMMAND_COUNT (sizeof(COMMANDS) / sizeof(COMMANDS[0]))
 

@@ -64,6 +64,7 @@ if (CMAKE_C_COMPILER)
         src/network/scanner.c
         src/network/iface.c
         src/network/forgery.c
+        src/network/packet_log.c
         src/process/cli.c
         src/process/cli_commands.c
         src/process/jammer.c

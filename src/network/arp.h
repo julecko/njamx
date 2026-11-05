@@ -1,6 +1,7 @@
 #ifndef NETWORK_ARP_H
 #define NETWORK_ARP_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include "socket.h"
@@ -28,5 +29,11 @@ int arp_wait_reply(const network_socket_t *s, uint32_t target_ip, uint8_t reply_
 // sender_mac - Out: replying host's MAC address.
 // @return 0 on success, -1 on timeout/error.
 int arp_recv_reply(const network_socket_t *s, uint32_t *sender_ip, uint8_t sender_mac[6]);
+
+// Formats a raw Ethernet+ARP frame (as logged by packet_log_record) into
+// a human-readable one-liner, e.g. "ARP reply   aa:..:ff (10.0.0.5)  ->
+// bb:..:11 (10.0.0.1)". Writes "(truncated frame, N byte(s))" instead if
+// frame is shorter than a full ARP frame.
+void arp_frame_describe(const uint8_t *frame, size_t len, char *out, size_t out_cap);
 
 #endif

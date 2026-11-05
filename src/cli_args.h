@@ -13,6 +13,9 @@ typedef enum cli_args_result {
 
 typedef enum cli_flags {
     CLI_ARGS_FLAGS_CHANGE_MAC = 1 << 0,
+    // Forged ARP replies (jamming) use the program's real/active MAC
+    // instead of a freshly generated random one.
+    CLI_ARGS_FLAGS_REAL_MAC = 1 << 1,
 } cli_flags_t;
 
 typedef struct cli_args {

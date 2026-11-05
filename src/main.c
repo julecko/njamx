@@ -16,6 +16,7 @@
 #include "network/forgery.h"
 #include "network/iface.h"
 #include "network/network.h"
+#include "network/packet_log.h"
 #include "network/scanner.h"
 #include "network/socket.h"
 #include "platform/compat.h"
@@ -61,6 +62,7 @@ int main(int argc, char *argv[]) {
     }
 
     srand((unsigned int)time(NULL));
+    packet_log_init();
 
     uint8_t my_mac[6];
     if (network_iface_get_mac(args.interface, my_mac) < 0) {
@@ -115,10 +117,12 @@ int main(int argc, char *argv[]) {
     atomic_int timeout_sec = args.timeout_sec;
     atomic_bool quit = false;
 
-    jammer_args_t jammer_args = {.network = &network,
-                                 .interface = args.interface,
-                                 .stop_flag = &quit,
-                                 .network_socket = sock};
+    jammer_args_t jammer_args = {
+        .network = &network,
+        .interface = args.interface,
+        .stop_flag = &quit,
+        .network_socket = sock,
+        .sender_mac_override = (args.flags & CLI_ARGS_FLAGS_REAL_MAC) ? program_mac : NULL};
     pthread_t jammer_thread;
     if (pthread_create(&jammer_thread, NULL, jammer_process, &jammer_args) != 0) {
         fprintf(stderr, "Couldnt start jammer thread\n");

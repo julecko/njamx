@@ -215,7 +215,7 @@ static void draw(network_t *network, const size_t *visible, size_t visible_count
     }
     pthread_mutex_unlock(&network->lock);
 
-    printf("\n[Up/Down] scroll  commands: help, scan, timeout, selfjam, quit\n");
+    printf("\n[Up/Down] scroll  commands: help, scan, timeout, selfjam, packets, quit\n");
     if (status_line[0] != '\0')
         printf("%s\n", status_line);
     printf("njamx> %s", input);
