@@ -92,7 +92,7 @@ static void enable_raw_mode(void) {
     fflush(stdout);
 }
 
-static size_t get_visible_rows(void) {
+size_t cli_get_visible_rows(void) {
     CONSOLE_SCREEN_BUFFER_INFO info;
     if (GetConsoleScreenBufferInfo(win_stdout, &info)) {
         size_t rows = (size_t)(info.srWindow.Bottom - info.srWindow.Top + 1);
@@ -126,7 +126,7 @@ static void enable_raw_mode(void) {
     fflush(stdout);
 }
 
-static size_t get_visible_rows(void) {
+size_t cli_get_visible_rows(void) {
     struct winsize ws;
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_row > 6)
         return ws.ws_row - 6;
@@ -215,14 +215,15 @@ static void draw(network_t *network, const size_t *visible, size_t visible_count
     }
     pthread_mutex_unlock(&network->lock);
 
-    printf("\n[Up/Down] scroll  commands: help, scan, timeout, selfjam, packets, quit\n");
+    printf("\n[Up/Down] scroll  commands: help, scan, timeout, selfjam, randommac, changemac, "
+           "packets, quit\n");
     if (status_line[0] != '\0')
         printf("%s\n", status_line);
     printf("njamx> %s", input);
     fflush(stdout);
 }
 
-void cli_run(network_t *network, const network_socket_t *sock, const uint8_t src_mac[6],
+void cli_run(network_t *network, const network_socket_t *sock, runtime_options_t *opts,
              atomic_int *timeout_sec, atomic_bool *quit) {
     size_t *visible = malloc(network->length * sizeof(size_t));
     if (!visible)
@@ -230,7 +231,7 @@ void cli_run(network_t *network, const network_socket_t *sock, const uint8_t src
 
     enable_raw_mode();
 
-    size_t max_visible = get_visible_rows();
+    size_t max_visible = cli_get_visible_rows();
     size_t offset = 0;
     size_t visible_count = collect_visible(network, visible);
 
@@ -239,7 +240,7 @@ void cli_run(network_t *network, const network_socket_t *sock, const uint8_t src
     char status_line[STATUS_MAX] = {0};
     cli_context_t ctx = {.network = network,
                          .sock = sock,
-                         .src_mac = src_mac,
+                         .opts = opts,
                          .timeout_sec = timeout_sec,
                          .visible = visible,
                          .visible_count = visible_count};
@@ -295,7 +296,7 @@ void cli_run(network_t *network, const network_socket_t *sock, const uint8_t src
         if (!redraw)
             continue;
 
-        max_visible = get_visible_rows();
+        max_visible = cli_get_visible_rows();
         visible_count = collect_visible(network, visible);
         if (offset > 0 && offset + max_visible > visible_count) {
             offset = visible_count > max_visible ? visible_count - max_visible : 0;

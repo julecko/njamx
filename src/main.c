@@ -23,6 +23,7 @@
 #include "platform/thread_compat.h"
 #include "process/cli.h"
 #include "process/jammer.h"
+#include "process/runtime_options.h"
 #include "tools/mac_change.h"
 #include "tools/privileges.h"
 #include "version.h"
@@ -117,12 +118,12 @@ int main(int argc, char *argv[]) {
     atomic_int timeout_sec = args.timeout_sec;
     atomic_bool quit = false;
 
+    runtime_options_t opts;
+    runtime_options_init(&opts, args.interface, my_mac, program_mac,
+                         (args.flags & CLI_ARGS_FLAGS_REAL_MAC) != 0);
+
     jammer_args_t jammer_args = {
-        .network = &network,
-        .interface = args.interface,
-        .stop_flag = &quit,
-        .network_socket = sock,
-        .sender_mac_override = (args.flags & CLI_ARGS_FLAGS_REAL_MAC) ? program_mac : NULL};
+        .network = &network, .stop_flag = &quit, .network_socket = sock, .opts = &opts};
     pthread_t jammer_thread;
     if (pthread_create(&jammer_thread, NULL, jammer_process, &jammer_args) != 0) {
         fprintf(stderr, "Couldnt start jammer thread\n");
@@ -131,7 +132,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    cli_run(&network, &sock, program_mac, &timeout_sec, &quit);
+    cli_run(&network, &sock, &opts, &timeout_sec, &quit);
 
     printf("Cleaning up, can take up few seconds...\n");
     pthread_join(jammer_thread, NULL);

@@ -8,6 +8,7 @@
 
 #include "network/network.h"
 #include "network/socket.h"
+#include "process/runtime_options.h"
 
 // Everything a command handler might need, bundled so the dispatch table
 // in cli_commands.c can stay a flat array of (name, function pointer)
@@ -15,7 +16,7 @@
 typedef struct {
     network_t *network;
     const network_socket_t *sock;
-    const uint8_t *src_mac;
+    runtime_options_t *opts;
     atomic_int *timeout_sec;
 
     // Maps the on-screen row number shown to the user (visible[k] for row

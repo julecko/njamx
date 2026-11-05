@@ -3,7 +3,6 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <string.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -24,14 +23,15 @@ void *jammer_process(void *arg) {
     atomic_bool *stop_flag = args->stop_flag;
 
     network_socket_t network_socket = args->network_socket;
-    uint8_t sender_mac[6];
-    if (args->sender_mac_override)
-        memcpy(sender_mac, args->sender_mac_override, 6);
-    else
-        network_forgery_mac(sender_mac);
 
     int cleanup = 3;
     while (cleanup) {
+        uint8_t sender_mac[6];
+        if (atomic_load(&args->opts->use_real_mac))
+            runtime_options_get_program_mac(args->opts, sender_mac);
+        else
+            network_forgery_mac(sender_mac);
+
         pthread_mutex_lock(&network->lock);
         for (size_t i = 0; i < network->length; i++) {
             device_t *device_router = &network->devices[i];

@@ -68,6 +68,7 @@ if (CMAKE_C_COMPILER)
         src/process/cli.c
         src/process/cli_commands.c
         src/process/jammer.c
+        src/process/runtime_options.c
         src/tools/mac_change.c
         src/tools/privileges.c
     )
