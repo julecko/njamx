@@ -9,6 +9,16 @@
 #ifdef _WIN32
 
 #include <stdlib.h>
+
+// Exclude GDI/USER declarations (Rectangle, CloseWindow, ShowCursor, ...)
+// so they don't collide with raylib's own symbols when both headers end
+// up in the same translation unit (e.g. process/gui.c).
+#ifndef NOGDI
+#define NOGDI
+#endif
+#ifndef NOUSER
+#define NOUSER
+#endif
 #include <windows.h>
 
 typedef CRITICAL_SECTION pthread_mutex_t;
@@ -51,7 +61,8 @@ static inline DWORD WINAPI pthread_compat_trampoline(LPVOID param) {
 
 static inline int pthread_create(pthread_t *thread, void *attr, void *(*fn)(void *), void *arg) {
     (void)attr;
-    pthread_compat_trampoline_args_t *t = malloc(sizeof(*t));
+    pthread_compat_trampoline_args_t *t =
+        (pthread_compat_trampoline_args_t *)malloc(sizeof(*t));
     if (!t)
         return -1;
     t->fn = fn;

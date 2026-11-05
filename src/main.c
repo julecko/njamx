@@ -65,6 +65,31 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    char ip_buf[64] = "";
+    char iface_buf[NETWORK_IFACE_NAME_LEN] = "";
+#ifdef NJAMX_HAVE_GUI
+    if ((args.flags & CLI_ARGS_FLAGS_GUI) && (args.interface == NULL || args.ip == NULL)) {
+        bool mac_change = (args.flags & CLI_ARGS_FLAGS_CHANGE_MAC) != 0;
+        bool real_mac = (args.flags & CLI_ARGS_FLAGS_REAL_MAC) != 0;
+        int timeout_sec = args.timeout_sec;
+        if (args.ip)
+            snprintf(ip_buf, sizeof(ip_buf), "%s", args.ip);
+        if (args.interface)
+            snprintf(iface_buf, sizeof(iface_buf), "%s", args.interface);
+
+        if (!gui_run_setup(ip_buf, sizeof(ip_buf), iface_buf, sizeof(iface_buf), &mac_change,
+                           &real_mac, &timeout_sec))
+            return 0;
+
+        args.ip = ip_buf;
+        args.interface = iface_buf;
+        args.timeout_sec = timeout_sec;
+        args.flags = (args.flags & ~(CLI_ARGS_FLAGS_CHANGE_MAC | CLI_ARGS_FLAGS_REAL_MAC)) |
+                    (mac_change ? CLI_ARGS_FLAGS_CHANGE_MAC : 0) |
+                    (real_mac ? CLI_ARGS_FLAGS_REAL_MAC : 0);
+    }
+#endif
+
     srand((unsigned int)time(NULL));
     packet_log_init();
 

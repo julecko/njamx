@@ -15,6 +15,10 @@ typedef SSIZE_T ssize_t;
 
 #include "network/network.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Backed by libpcap on Linux and Npcap (the Windows port of libpcap's
 // API) on Windows, so the same capture/injection code runs unmodified
 // on both platforms.
@@ -31,5 +35,9 @@ ssize_t network_socket_send(const network_socket_t *s, const uint8_t dst_mac[6],
                             size_t len);
 ssize_t network_socket_recv(const network_socket_t *s, void *buf, size_t len);
 void network_socket_close(network_socket_t *s);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

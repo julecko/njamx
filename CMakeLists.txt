@@ -10,10 +10,9 @@ if (CMAKE_C_COMPILER)
     set(CMAKE_C_STANDARD_REQUIRED ON)
 endif()
 
-if (CMAKE_CXX_COMPILER)
-    set(CMAKE_CXX_STANDARD 23)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
+# CXX_STANDARD is set as a target property on njamx itself, further down
+# (not here, globally) so it doesn't leak into FLTK's own subdirectory
+# build below - FLTK isn't guaranteed to compile cleanly as C++23.
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 if (CMAKE_C_COMPILER)
@@ -51,23 +50,35 @@ else()
     pkg_check_modules(PCAP REQUIRED libpcap)
 endif()
 
-# Optional GUI (process/gui.c): a single raylib window driving the same
-# cli_run_command() dispatcher the terminal UI uses. raylib builds the
-# same way on every platform via CMake, so it's fetched from source
-# here instead of depending on a system package (there's no Windows
-# package manager to depend on anyway) - same approach as the Npcap SDK
-# above. Turn this off to build a GUI-free, raylib-free binary.
-option(NJAMX_BUILD_GUI "Build the raylib-based GUI (-g/--gui flag)" ON)
+# Optional GUI (process/gui/, C++/FLTK): a window driving the same
+# cli_run_command() dispatcher the terminal UI uses. FLTK builds the same
+# way on every platform via CMake, so it's fetched from source here
+# instead of depending on a system package (there's no Windows package
+# manager to depend on anyway) - same approach as the Npcap SDK above.
+# Turn this off to build a GUI-free, FLTK-free binary.
+option(NJAMX_BUILD_GUI "Build the FLTK-based GUI (-g/--gui flag)" ON)
 
 if (NJAMX_BUILD_GUI)
     include(FetchContent)
-    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-    FetchContent_Declare(raylib
-        GIT_REPOSITORY https://github.com/raysan5/raylib.git
-        GIT_TAG 5.5
+
+    # Only the core "fltk" library is needed (windows/buttons/inputs/
+    # Fl_Table_Row) - trim everything else FLTK's own CMakeLists would
+    # otherwise build by default.
+    set(FLTK_BUILD_TEST OFF CACHE BOOL "" FORCE)
+    set(FLTK_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(FLTK_BUILD_FLUID OFF CACHE BOOL "" FORCE)
+    set(FLTK_BUILD_FLTK_OPTIONS OFF CACHE BOOL "" FORCE)
+    set(FLTK_BUILD_FORMS OFF CACHE BOOL "" FORCE)
+    set(FLTK_BUILD_GL OFF CACHE BOOL "" FORCE)
+    set(FLTK_BUILD_HTML_DOCS OFF CACHE BOOL "" FORCE)
+    set(FLTK_BUILD_PDF_DOCS OFF CACHE BOOL "" FORCE)
+
+    FetchContent_Declare(fltk
+        GIT_REPOSITORY https://github.com/fltk/fltk.git
+        GIT_TAG release-1.4.5
         GIT_SHALLOW TRUE
     )
-    FetchContent_MakeAvailable(raylib)
+    FetchContent_MakeAvailable(fltk)
 endif()
 
 set(SOURCES)
@@ -96,15 +107,16 @@ if (CMAKE_C_COMPILER)
             src/platform/win_adapter.c
         )
     endif()
-    if (NJAMX_BUILD_GUI)
-        list(APPEND SOURCES src/process/gui.c)
-    endif()
 endif()
 
-if (CMAKE_CXX_COMPILER)
+if (CMAKE_CXX_COMPILER AND NJAMX_BUILD_GUI)
     list(APPEND SOURCES
-        # src/main.cpp
-        # add other C++ files here
+        src/process/gui/gui_entry.cpp
+        src/process/gui/format.cpp
+        src/process/gui/device_table.cpp
+        src/process/gui/packet_view.cpp
+        src/process/gui/setup_window.cpp
+        src/process/gui/main_window.cpp
     )
 endif()
 
@@ -116,6 +128,13 @@ endif()
 add_executable(njamx ${SOURCES})
 
 set_target_properties(njamx PROPERTIES OUTPUT_NAME ${EXECUTABLE_OUTPUT_NAME})
+
+if (CMAKE_CXX_COMPILER)
+    set_target_properties(njamx PROPERTIES
+        CXX_STANDARD 23
+        CXX_STANDARD_REQUIRED ON
+    )
+endif()
 
 if(WIN32)
     target_include_directories(njamx PRIVATE "${NPCAP_SDK_DIR}/Include")
@@ -131,8 +150,7 @@ target_include_directories(njamx PRIVATE
 )
 
 if (NJAMX_BUILD_GUI)
-    target_link_libraries(njamx PRIVATE raylib)
-    target_include_directories(njamx PRIVATE "${PROJECT_SOURCE_DIR}/third_party")
+    target_link_libraries(njamx PRIVATE fltk)
     target_compile_definitions(njamx PRIVATE NJAMX_HAVE_GUI=1)
 endif()
 

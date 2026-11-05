@@ -6,6 +6,10 @@
 
 #include "socket.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int arp_send_request(const network_socket_t *s, const uint8_t src_mac[6], uint32_t src_ip,
                      uint32_t target_ip);
 
@@ -35,5 +39,9 @@ int arp_recv_reply(const network_socket_t *s, uint32_t *sender_ip, uint8_t sende
 // bb:..:11 (10.0.0.1)". Writes "(truncated frame, N byte(s))" instead if
 // frame is shorter than a full ARP frame.
 void arp_frame_describe(const uint8_t *frame, size_t len, char *out, size_t out_cap);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

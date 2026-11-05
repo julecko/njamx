@@ -10,6 +10,10 @@
 #include "network/socket.h"
 #include "process/runtime_options.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Everything a command handler might need, bundled so the dispatch table
 // in cli_commands.c can stay a flat array of (name, function pointer)
 // pairs.
@@ -39,5 +43,9 @@ typedef struct {
  */
 void cli_run_command(const char *input, cli_context_t *ctx, char *status_line, size_t status_cap,
                       bool *should_quit);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -8,6 +8,10 @@
 #include "network/socket.h"
 #include "process/runtime_options.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Show a scrollable, color-coded table of every known (non-dead)
  *        device in the network, with an msfconsole-style command prompt
@@ -40,5 +44,9 @@ size_t cli_get_visible_rows(void);
 // network->length). Returns how many were written. Shared with gui.c so
 // both UIs list exactly the same devices.
 size_t cli_collect_visible(network_t *network, size_t *out);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

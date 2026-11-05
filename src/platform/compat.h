@@ -8,6 +8,15 @@
 
 #ifdef _WIN32
 
+// Exclude GDI/USER declarations so they don't collide with raylib's own
+// symbols (Rectangle, CloseWindow, ShowCursor, ...) when both headers end
+// up in the same translation unit.
+#ifndef NOGDI
+#define NOGDI
+#endif
+#ifndef NOUSER
+#define NOUSER
+#endif
 #include <windows.h>
 
 static inline void platform_sleep_sec(unsigned int sec) {

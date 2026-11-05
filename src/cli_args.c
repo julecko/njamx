@@ -1,12 +1,17 @@
 #include "cli_args.h"
 
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 void cli_args_print_usage(const char *prog_name, FILE *stream) {
+#ifdef NJAMX_HAVE_GUI
+    fprintf(stream, "Usage: %s [<ip> -i <interface>] [-g]\n", prog_name);
+#else
     fprintf(stream, "Usage: %s <ip> -i <interface>\n", prog_name);
+#endif
     fprintf(stream, "\n");
     fprintf(stream, "  -i, --interface <name>   Network interface to use (required)\n");
     fprintf(stream, "  -t, --timeout <seconds>  Time to wait for ARP replies (default: %d)\n",
@@ -18,6 +23,9 @@ void cli_args_print_usage(const char *prog_name, FILE *stream) {
 #ifdef NJAMX_HAVE_GUI
     fprintf(stream, "  -g, --gui                Launch the graphical interface instead of the "
                     "terminal one\n");
+    fprintf(stream,
+            "\nWith no arguments at all, njamx launches the GUI and lets you fill in the IP, "
+            "interface, etc. from a setup screen instead of the command line.\n");
 #endif
     fprintf(stream, "  -h, --help               Show this help message\n");
     fprintf(stream, "Examples: %s 10.10.10.1/23 -i eth0\n", prog_name);
@@ -42,6 +50,13 @@ cli_args_t cli_args_parse(int argc, char *argv[]) {
     cli_args_t args = {0};
     args.result = CLI_ARGS_ERROR;
     args.timeout_sec = CLI_ARGS_DEFAULT_TIMEOUT_SEC;
+
+#ifdef NJAMX_HAVE_GUI
+    // No arguments at all: go straight to the GUI, which prompts for the
+    // IP/interface itself instead of requiring them here.
+    if (argc == 1)
+        args.flags |= CLI_ARGS_FLAGS_GUI;
+#endif
 
     for (int i = 1; i < argc; i++) {
         const char *arg = argv[i];
@@ -92,12 +107,22 @@ cli_args_t cli_args_parse(int argc, char *argv[]) {
         return args;
     }
 
-    if (args.interface == NULL) {
-        fprintf(stderr, "Error: missing required -i/--interface option\n");
-        return args;
-    } else if (args.ip == NULL) {
-        fprintf(stderr, "Error: missing required IP address\n");
-        return args;
+#ifdef NJAMX_HAVE_GUI
+    bool gui_requested = (args.flags & CLI_ARGS_FLAGS_GUI) != 0;
+#else
+    bool gui_requested = false;
+#endif
+
+    // The GUI prompts for whatever's missing itself, so only the
+    // terminal UI requires these up front.
+    if (!gui_requested) {
+        if (args.interface == NULL) {
+            fprintf(stderr, "Error: missing required -i/--interface option\n");
+            return args;
+        } else if (args.ip == NULL) {
+            fprintf(stderr, "Error: missing required IP address\n");
+            return args;
+        }
     }
 
     args.result = CLI_ARGS_SUCCESS;

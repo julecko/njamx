@@ -7,6 +7,10 @@
 
 #include "platform/thread_compat.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Jamming/MAC settings that can be flipped live from the CLI ("randommac",
 // "changemac" in cli_commands.c) as well as set once at startup from
 // cli_args. Shared between the CLI's command dispatch (main thread), the
@@ -39,5 +43,9 @@ void runtime_options_init(runtime_options_t *opts, const char *interface,
 
 void runtime_options_set_program_mac(runtime_options_t *opts, const uint8_t mac[6]);
 void runtime_options_get_program_mac(runtime_options_t *opts, uint8_t out[6]);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

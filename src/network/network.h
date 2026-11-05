@@ -7,6 +7,10 @@
 #include "network/device.h"
 #include "platform/thread_compat.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct network {
     uint32_t my_ip;
     uint32_t mask;
@@ -43,4 +47,9 @@ static inline uint32_t network_get_network_ip(network_t *network) {
 static inline uint32_t network_get_broadcast_ip(network_t *network) {
     return network->my_ip | ~network->mask;
 }
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum device_state {
     DEVICE_STATE_DEAD,
     DEVICE_STATE_ADDED,
@@ -48,6 +52,10 @@ device_t network_device_create(uint32_t ip);
  * @return Nothing
  */
 void network_device_print(device_t *device);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

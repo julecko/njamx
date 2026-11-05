@@ -7,6 +7,10 @@
 #define PACKET_LOG_CAPACITY 32
 #define PACKET_LOG_MAX_FRAME 128
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct packet_log_entry {
     uint8_t data[PACKET_LOG_MAX_FRAME];
     size_t len;
@@ -25,5 +29,9 @@ void packet_log_record(const void *frame, size_t len);
 // Copies up to out_cap of the most recently recorded entries into out,
 // oldest first. Returns how many were copied.
 size_t packet_log_snapshot(packet_log_entry_t *out, size_t out_cap);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
