@@ -265,6 +265,7 @@ static void cmd_jam(const char *args, cli_context_t *ctx, char *status_line, siz
     if (device->role == DEVICE_ROLE_ROUTER) {
         snprintf(status_line, status_cap, "Invalid device number (only clients can be jammed) %ld",
                  idx);
+        pthread_mutex_unlock(&ctx->network->lock);
         return;
     }
     device->jamming ^= true;
@@ -299,6 +300,7 @@ static void cmd_router(const char *args, cli_context_t *ctx, char *status_line, 
     if (device->jamming) {
         snprintf(status_line, status_cap,
                  "Invalid device number (cannot convert jammed device to router) %ld", idx);
+        pthread_mutex_unlock(&ctx->network->lock);
         return;
     }
 

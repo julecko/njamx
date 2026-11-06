@@ -3,5 +3,6 @@ Type=Application
 Name=njamx
 Comment=ARP-based LAN device scanner and jammer
 Exec=njamx -g
-Terminal=true
+Terminal=false
+Icon=njamx
 Categories=Network;

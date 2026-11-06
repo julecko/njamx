@@ -162,18 +162,22 @@ Section "Install"
   ${EndIf}
 
   ; Start Menu/Desktop shortcuts launch with -g so njamx opens straight
-  ; into the GUI when clicked, same as any other normal desktop app.
-  ; njamx is still a console-subsystem binary (see CMakeLists.txt), so
-  ; Windows allocates a console for it automatically either way, which is
-  ; what keeps GUI-mode log output visible.
+  ; into the GUI when clicked, same as any other normal desktop app; it
+  ; detects it wasn't launched from a shell and just shows the GUI (see
+  ; platform/detach.c), with no console window left behind. The exe
+  ; already carries its own icon (embedded via njamx.rc), but shortcuts
+  ; are pointed at it explicitly too, same icon either way.
   CreateDirectory "$SMPROGRAMS\njamx"
-  CreateShortcut "$SMPROGRAMS\njamx\njamx.lnk" "$InstDir\${NJAMX_EXE_NAME}" "-g"
-  CreateShortcut "$DESKTOP\njamx.lnk" "$InstDir\${NJAMX_EXE_NAME}" "-g"
+  CreateShortcut "$SMPROGRAMS\njamx\njamx.lnk" "$InstDir\${NJAMX_EXE_NAME}" "-g" \
+    "$InstDir\${NJAMX_EXE_NAME}" 0
+  CreateShortcut "$DESKTOP\njamx.lnk" "$InstDir\${NJAMX_EXE_NAME}" "-g" \
+    "$InstDir\${NJAMX_EXE_NAME}" 0
 
   WriteUninstaller "$InstDir\Uninstall.exe"
 
   WriteRegStr ShCtx "${UNINSTKEY}" "DisplayName" "njamx"
   WriteRegStr ShCtx "${UNINSTKEY}" "DisplayVersion" "${NJAMX_VERSION}"
+  WriteRegStr ShCtx "${UNINSTKEY}" "DisplayIcon" "$InstDir\${NJAMX_EXE_NAME}"
   WriteRegStr ShCtx "${UNINSTKEY}" "UninstallString" '"$InstDir\Uninstall.exe"'
   WriteRegStr ShCtx "${UNINSTKEY}" "InstallLocation" "$InstDir"
   WriteRegStr ShCtx "${UNINSTKEY}" "$MultiUser.InstallMode" "1"

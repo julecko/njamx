@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 
 # When stable set project version to 1.0.0
-project(njamx VERSION 1.0.0 LANGUAGES C CXX)
+project(njamx VERSION 2.0.0 LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -23,6 +23,9 @@ if (CMAKE_CXX_COMPILER)
 endif()
 
 if(WIN32)
+    # Needed to compile njamx.rc below (embeds the app icon into the exe).
+    enable_language(RC)
+
     # Npcap's SDK (headers + wpcap.lib/Packet.lib) can't be redistributed
     # via vcpkg/apt due to its license, so it's fetched directly from
     # npcap.com the first time, same as the well-known FindPCAP.cmake
@@ -99,6 +102,7 @@ if (CMAKE_C_COMPILER)
         src/process/cli_commands.c
         src/process/jammer.c
         src/process/runtime_options.c
+        src/platform/detach.c
         src/tools/mac_change.c
         src/tools/privileges.c
     )
@@ -106,6 +110,11 @@ if (CMAKE_C_COMPILER)
         list(APPEND SOURCES
             src/platform/win_adapter.c
         )
+
+        set(NJAMX_ICON_ICO "${CMAKE_SOURCE_DIR}/packaging/icons/njamx.ico")
+        configure_file("${CMAKE_SOURCE_DIR}/packaging/windows/njamx.rc.in"
+            "${CMAKE_BINARY_DIR}/njamx.rc" @ONLY)
+        list(APPEND SOURCES "${CMAKE_BINARY_DIR}/njamx.rc")
     endif()
 endif()
 
@@ -296,11 +305,11 @@ else()
 
     if (NJAMX_BUILD_GUI)
         # Lets njamx show up as a normal clickable app in desktop menus
-        # (Exec passes -g so it opens straight into the GUI); Terminal=true
-        # so the desktop environment launches it inside a terminal emulator,
-        # same as running it from a shell, so GUI-mode log output stays visible.
+        # (Exec passes -g so it opens straight into the GUI).
         install(FILES "${CMAKE_SOURCE_DIR}/packaging/linux/njamx.desktop"
             DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
+        install(FILES "${CMAKE_SOURCE_DIR}/packaging/icons/njamx.png"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps")
     endif()
 
     set(CPACK_GENERATOR "DEB")

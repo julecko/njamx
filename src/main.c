@@ -20,6 +20,7 @@
 #include "network/scanner.h"
 #include "network/socket.h"
 #include "platform/compat.h"
+#include "platform/detach.h"
 #include "platform/thread_compat.h"
 #include "process/cli.h"
 #ifdef NJAMX_HAVE_GUI
@@ -56,6 +57,27 @@ int main(int argc, char *argv[]) {
         case CLI_ARGS_SUCCESS:
             break;
     }
+
+#ifdef NJAMX_HAVE_GUI
+    if (args.flags & CLI_ARGS_FLAGS_GUI) {
+        if (platform_launched_from_terminal()) {
+            // A shell is waiting on us - hand off to a fully detached
+            // process so it gets its prompt back immediately instead of
+            // blocking on the GUI; this process's job is then done.
+            if (platform_relaunch_detached(argc, argv))
+                return 0;
+            // Relaunching failed for some reason; better to still show
+            // the GUI (tying up this shell) than not start at all.
+        } else {
+            // Nothing is waiting on us (double-click, a Start Menu/
+            // Desktop shortcut, a Linux launcher, ...) - there's no
+            // prompt to hand back to. On Windows this process may still
+            // have a console Windows auto-allocated for it; drop it so
+            // no stray window sits behind the GUI.
+            platform_detach_console();
+        }
+    }
+#endif
 
     if (!privileges_has_raw_capture()) {
         fprintf(stderr,
