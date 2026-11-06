@@ -161,6 +161,15 @@ Section "Install"
     ExecWait '"$InstDir\npcap-installer.exe"'
   ${EndIf}
 
+  ; Start Menu/Desktop shortcuts launch with -g so njamx opens straight
+  ; into the GUI when clicked, same as any other normal desktop app.
+  ; njamx is still a console-subsystem binary (see CMakeLists.txt), so
+  ; Windows allocates a console for it automatically either way, which is
+  ; what keeps GUI-mode log output visible.
+  CreateDirectory "$SMPROGRAMS\njamx"
+  CreateShortcut "$SMPROGRAMS\njamx\njamx.lnk" "$InstDir\${NJAMX_EXE_NAME}" "-g"
+  CreateShortcut "$DESKTOP\njamx.lnk" "$InstDir\${NJAMX_EXE_NAME}" "-g"
+
   WriteUninstaller "$InstDir\Uninstall.exe"
 
   WriteRegStr ShCtx "${UNINSTKEY}" "DisplayName" "njamx"
@@ -194,6 +203,10 @@ Section "Uninstall"
   Delete "$InstDir\npcap-installer.exe"
   Delete "$InstDir\Uninstall.exe"
   RMDir "$InstDir"
+
+  Delete "$SMPROGRAMS\njamx\njamx.lnk"
+  RMDir "$SMPROGRAMS\njamx"
+  Delete "$DESKTOP\njamx.lnk"
 
   DeleteRegKey ShCtx "${UNINSTKEY}"
 SectionEnd

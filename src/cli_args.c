@@ -24,8 +24,8 @@ void cli_args_print_usage(const char *prog_name, FILE *stream) {
     fprintf(stream, "  -g, --gui                Launch the graphical interface instead of the "
                     "terminal one\n");
     fprintf(stream,
-            "\nWith no arguments at all, njamx launches the GUI and lets you fill in the IP, "
-            "interface, etc. from a setup screen instead of the command line.\n");
+            "\nWith -g and no <ip>/-i, njamx shows a setup screen to fill in the IP, interface, "
+            "etc. instead of requiring them on the command line.\n");
 #endif
     fprintf(stream, "  -h, --help               Show this help message\n");
     fprintf(stream, "Examples: %s 10.10.10.1/23 -i eth0\n", prog_name);
@@ -50,13 +50,6 @@ cli_args_t cli_args_parse(int argc, char *argv[]) {
     cli_args_t args = {0};
     args.result = CLI_ARGS_ERROR;
     args.timeout_sec = CLI_ARGS_DEFAULT_TIMEOUT_SEC;
-
-#ifdef NJAMX_HAVE_GUI
-    // No arguments at all: go straight to the GUI, which prompts for the
-    // IP/interface itself instead of requiring them here.
-    if (argc == 1)
-        args.flags |= CLI_ARGS_FLAGS_GUI;
-#endif
 
     for (int i = 1; i < argc; i++) {
         const char *arg = argv[i];

@@ -294,6 +294,15 @@ if(WIN32)
 else()
     install(TARGETS njamx RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+    if (NJAMX_BUILD_GUI)
+        # Lets njamx show up as a normal clickable app in desktop menus
+        # (Exec passes -g so it opens straight into the GUI); Terminal=true
+        # so the desktop environment launches it inside a terminal emulator,
+        # same as running it from a shell, so GUI-mode log output stays visible.
+        install(FILES "${CMAKE_SOURCE_DIR}/packaging/linux/njamx.desktop"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
+    endif()
+
     set(CPACK_GENERATOR "DEB")
     set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
     set(CPACK_DEBIAN_PACKAGE_SECTION "net")
