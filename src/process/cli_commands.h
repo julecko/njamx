@@ -1,13 +1,13 @@
 #ifndef PROCESS_CLI_COMMANDS_H
 #define PROCESS_CLI_COMMANDS_H
 
-#include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include "network/network.h"
 #include "network/socket.h"
+#include "platform/atomic_compat.h"
 #include "process/runtime_options.h"
 
 #ifdef __cplusplus

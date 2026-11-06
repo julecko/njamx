@@ -1,10 +1,10 @@
 #ifndef PROCESS_RUNTIME_OPTIONS_H
 #define PROCESS_RUNTIME_OPTIONS_H
 
-#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "platform/atomic_compat.h"
 #include "platform/thread_compat.h"
 
 #ifdef __cplusplus

@@ -1,10 +1,9 @@
 #ifndef PROCESS_JAMMER_H
 #define PROCESS_JAMMER_H
 
-#include <stdatomic.h>
-
 #include "./network/network.h"
 #include "network/socket.h"
+#include "platform/atomic_compat.h"
 #include "process/runtime_options.h"
 
 typedef struct jammer_args {

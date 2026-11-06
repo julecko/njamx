@@ -1,12 +1,12 @@
 #ifndef PROCESS_GUI_H
 #define PROCESS_GUI_H
 
-#include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
 
 #include "network/network.h"
 #include "network/socket.h"
+#include "platform/atomic_compat.h"
 #include "process/runtime_options.h"
 
 // Implemented in C++ (src/process/gui/, FLTK-based) and exposed here with
